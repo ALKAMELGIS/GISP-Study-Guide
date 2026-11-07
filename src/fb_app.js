@@ -110,7 +110,7 @@ function leftHTML(s){
   if(part===0)return pageTools()+runHead(`${AR} ${L.area} · ${AREA_T(L.area)}`,L.module)+`<div class="kicker">${tt(`Lesson ${idx+1} of ${LESSONS.length}`,`الدرس ${idx+1} من ${LESSONS.length}`)}</div><h1>${esc(L.title)}</h1>${L.concept.map(p=>`<p>${esc(p)}</p>`).join("")}
    <div class="formula">${L.formula.map(([f,n])=>`<div><code>${esc(f)}</code><span>${esc(n)}</span></div>`).join("")}</div>
    <div class="ksa">${tt("Official blueprint KSAs: ","رموز KSA الرسمية: ")}${L.ksa.join(", ")} · ${tt("Lesson text: supplementary","نص الدرس: تكميلي")}</div><div class="folio">${s*2}</div>`;
-  if(part===1){const p=L.predict,ans=st.pred;return pageTools()+runHead(L.title,tt("Vocabulary & prediction","المصطلحات والتوقّع"))+`<h2>${tt("Key vocabulary","المصطلحات الأساسية")}</h2><dl>${L.vocab.map(([t,d])=>`<dt>${esc(t)}</dt><dd>${esc(d)}</dd>`).join("")}</dl>
+  if(part===1){const p=L.predict,ans=st.pred;return pageTools()+runHead(L.title,tt("Vocabulary & prediction","المصطلحات والتوقّع"))+`<h2>${tt("Key vocabulary","المصطلحات الأساسية")}</h2><dl>${L.vocab.map(([t,d],vi)=>{const k=(FIGMAP[LESSONS[lessonAt(s).idx].id]||{}).v,st=k?k[vi]:null;return st!=null?`<dt><button class="vterm" data-vstep="${st}" title="${tt("Show on the figure","اعرضه على المجسّم")}">${esc(t)}<span aria-hidden="true">◈</span></button></dt><dd>${esc(d)}</dd>`:`<dt>${esc(t)}</dt><dd>${esc(d)}</dd>`;}).join("")}</dl>
    <h2>${tt("Predict first","توقّع أولاً")}</h2><div class="q">${esc(p.q)}</div><div class="opts" data-q="pred">${p.o.map((o,j)=>{const l="ABCD"[j];const cls=ans?(l===p.a?"ok":(l===ans?"no":"")):"";return `<button class="opt ${cls}" data-l="${l}" ${ans?"disabled":""}><b>${l}</b><span>${esc(o)}</span></button>`;}).join("")}</div>
    <div class="flapwrap"><div class="under"><b>${tt("Answer","الإجابة")} ${p.a}.</b> ${esc(p.ex)}</div><button class="flap ${ans?"up":"locked"}" data-act="flap" aria-label="${ans?tt("Explanation revealed","ظهر الشرح"):tt("Answer the prediction to lift this flap","أجب عن التوقّع لرفع الطيّة")}" ${ans?"":"aria-disabled=\"true\""}>${tt("Lift the flap after you predict","ارفع الطيّة بعد أن تتوقّع")}</button></div><div class="folio">${s*2}</div>`;}
   const items=[[tt("Prediction answered","أُجيب عن التوقّع"),st.pred!=null],[tt(`Figure watched (${new Set(st.demo).size}/${L.steps.length} steps)`,`شوهد المجسّم (${new Set(st.demo).size}/${L.steps.length} خطوات)`),new Set(st.demo).size>=L.steps.length],[tt("Knowledge check answered","أُجيب عن التحقق من الفهم"),L.check.every((_,i)=>st.chk[i]!=null)]];
@@ -145,6 +145,14 @@ function renderSpread(opts={}){
   if(!opts.noDemo){if(gisp){const key=s===0?"hero":ls.L.demo;if(!G.demo||G.demo.key!==key||opts.reDemo)showDemo(key,0);}else clearDemo();}
   $("#volTitle").textContent=gisp?tt("GISP","كتاب GISP"):(VOL()?VOL().title:tt("Document","مستند"));$("#volSub").textContent=gisp?tt("Interactive edition","الطبعة التفاعلية"):tt("Your document","مستندك");
 }
+/* harmony between pages and figures: each page of a lesson sets the figure to the matching step,
+   and vocabulary terms (◈) jump the figure to the step that shows them. p = [concept page, vocabulary page, check page] */
+const FIGMAP={crs:{p:[0,3,3],v:[1,1,0,3,2]},proj:{p:[0,1,2],v:[2,3,1,2]},datum:{p:[0,3,1],v:[1,2,1,3]},topo:{p:[0,1,4],v:[4,0,2,3,null]},
+  quality:{p:[0,1,3],v:[2,1,0,3,null]},carto:{p:[0,1,2],v:[1,2,3,2]},gnss:{p:[0,2,3],v:[2,3,3,3]},rs:{p:[0,2,3],v:[1,1,null,null]},
+  raster:{p:[0,2,3],v:[1,0,3,null]},overlay:{p:[0,2,3],v:[1,3,3,4]},stats:{p:[0,2,1],v:[2,1,2,1]},gdb:{p:[0,2,0],v:[0,1,1,0,0]},
+  arch:{p:[0,1,2],v:[0,1,2,2]},pm:{p:[0,1,2],v:[0,0,null,null]}};
+function syncFigure(){if(S.vol!=="gisp"||!G.demo)return;const s=curSpread();if(G.figSyncAt!==s){const c=$("#caption");if(c&&!(typeof W!=="undefined"&&W.on))c.hidden=true;}if(s<1||G.figSyncAt===s)return;G.figSyncAt=s;const{L,part}=lessonAt(s),m=FIGMAP[L.id];if(!m)return;const k=Math.min(m.p[part],L.steps.length-1);
+  if(G.demo.step!==k)setDemoStep(k);}
 async function go(n,instant){if(G.closed&&!G.webOn){await openBook();return;}if(!G.webOn&&n<0&&curSpread()===0){stopWatch();if(LS.on)stopListen();await closeBook();return;}if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
   const cnt=spreadCount(),from=curSpread();n=Math.max(0,Math.min(cnt-1,n));if(n===from||busy)return;busy=true;stopWatch();if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();}
   const dir=n>from?1:-1,gisp=S.vol==="gisp";
@@ -172,7 +180,7 @@ function edgeAt(e){if(G.closed||G.webOn||G.compact||!G.r)return null;const rc=G.
   const ax=Math.abs(p.x);if(Math.abs(p.z)>PD/2+.04||ax>PW+.08||ax<PW*.78)return null;
   if(ax<PW*.86&&G.demo&&ray.intersectObject(G.demo.group,true).length)return null;return p.x>0?"right":"left";}
 function fwdFor(side){const rev=isAR()&&S.vol==="gisp";return side==="right"?(rev?-1:1):(rev?1:-1);}
-function onPageClick(e){
+function onPageClick(e){const vt=e.target.closest(".vterm");if(vt){const k=+vt.dataset.vstep;if(G.demo){setDemoStep(k);try{captionStep(k);}catch(_){}}$$(".vterm.on").forEach(x=>x.classList.remove("on"));vt.classList.add("on");return;}
   const b=e.target.closest("button");
   if(!b){if(G.webOn||G.compact||getSelection().toString()||e.target.closest("a,input,textarea,mark,.opt,.flap,summary,label"))return;const h=edgeAt(e);if(h)go(curSpread()+fwdFor(h));return;}
   const s=curSpread();
@@ -496,7 +504,7 @@ function markView(){$$("#views .vb").forEach(b=>b.classList.toggle("on",b.datase
 function markDim(){const on=!!G.is2D;$("#hDim").setAttribute("aria-pressed",on);$("#hDim").setAttribute("aria-label",on?"Switch to 3D view":"Switch to 2D view");$$("#views [data-dim]").forEach(b=>{const m=(b.dataset.dim==="2d")===on;b.classList.toggle("on",m);b.setAttribute("aria-pressed",m);});trAll&&trAll();}
 function toggleDim(on){on=on==null?!G.is2D:on;set2D(on);markDim();markView();toast(on?tt("2D plan view","منظر مسطّح 2D"):tt("3D perspective","منظور ثلاثي الأبعاد 3D"));}
 
-{const _rs=renderSpread;renderSpread=function(o){const r=_rs(o);if(exploring()){renderExplore();}if(LS.on&&!LS.turning){const g=++LS.gen;setTimeout(()=>{if(g===LS.gen&&LS.on){const w=()=>{if(g!==LS.gen)return;if(busy)return setTimeout(w,150);startBlocks();};w();}},300);}return r;};}
+{const _rs=renderSpread;renderSpread=function(o){if(o&&o.reDemo)G.figSyncAt=null;const r=_rs(o);if(!(o&&o.noDemo))setTimeout(syncFigure,o&&o.reDemo?650:120);if(exploring()){renderExplore();}if(LS.on&&!LS.turning){const g=++LS.gen;setTimeout(()=>{if(g===LS.gen&&LS.on){const w=()=>{if(g!==LS.gen)return;if(busy)return setTimeout(w,150);startBlocks();};w();}},300);}return r;};}
 /* ---------- web page view (same content, one scrolling article; the same icon returns to the book) ---------- */
 let WIO=null;
 function webSection(s){const gisp=S.vol==="gisp";let html=leftHTML(s);if(!gisp)html+=`<div class="doctext">${(DOC&&DOC.pages[s*2+1])?esc(DOC.pages[s*2+1].text):""}</div>`;

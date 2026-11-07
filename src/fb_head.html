@@ -475,6 +475,12 @@ body.closed #openHint{display:inline-flex}
 body.closed #reader,body.closed #caption,body.closed .edge{display:none!important}
 body.closed #scene canvas{cursor:pointer}
 body.web #openHint{display:none!important}
+
+/* vocabulary terms that drive the figure */
+.vterm{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:inherit;font-weight:700;color:var(--ink);border-bottom:1.5px dotted color-mix(in srgb,var(--navy) 55%,transparent);padding:1px 0;border-radius:2px}
+.vterm span{font-size:.72em;color:var(--navy);opacity:.75}
+.vterm:hover,.vterm:focus-visible{color:var(--navy);border-bottom-style:solid;background:rgba(31,78,140,.07)}
+.vterm.on{color:var(--navy);border-bottom:2px solid var(--navy)}
 </style>
 
 <div id="loader" role="status" aria-live="polite"><div class="box"><svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><path d="M24 12c-5-4-12-5-18-4v28c6-1 13 0 18 4 5-4 12-5 18-4V8c-6-1-13 0-18 4z" fill="none" stroke="#161616" stroke-width="1.6"/><path d="M24 12v28" stroke="#161616" stroke-width="1.6"/></svg><h1>GISP Library</h1><div class="bar"><i id="ldbar"></i></div><span class="label" id="ldmsg">Binding the book</span></div></div>

@@ -76,7 +76,7 @@ function studioEnv(){if(G.env)return G.env;const T=THREE,s=new T.Scene(),geo=new
   box(6,3,-4,6,3);box(4,2,5,4,-3);
   const pm=new T.PMREMGenerator(G.r);G.env=pm.fromScene(s,.02).texture;pm.dispose();return G.env;}
 /* paper-cream parts of a figure become a soft porcelain blue so the model reads clearly against the white page */
-function specimen(color){const c=new THREE.Color(color),hsl={};c.getHSL(hsl);if(hsl.l>.72&&hsl.s<.5){c.setHSL(.585,.5,Math.min(.74,.5+(hsl.l-.72)*1.0));}return c;}
+function specimen(color){return new THREE.Color(color);}
 function mat(color,o={}){const env=G.r?studioEnv():null;color=specimen(color);return new THREE.MeshPhysicalMaterial(Object.assign({color,roughness:.38,metalness:0,clearcoat:.4,clearcoatRoughness:.3,envMap:env,envMapIntensity:.4},o));}
 
 /* ---- scene ---- */
@@ -431,12 +431,12 @@ DEMOS.proj=()=>{const T=THREE,g=new T.Group(),NL=72,NB=36,D=Math.PI/180,la0=-88*
   geo.attributes.position.array.set(arr.globe);geo.computeVertexNormals();
   const mesh=new T.Mesh(geo,new T.MeshStandardMaterial({map:tex,side:T.DoubleSide,roughness:.9}));mesh.frustumCulled=false;const holder=new T.Group();holder.position.y=.36;holder.add(mesh);g.add(holder);g.add(stand(.12));
   const ghost=hidden(new T.Mesh(new T.CylinderGeometry(S*1.03,S*1.03,S*2.1,40,1,true),new T.MeshBasicMaterial({color:INK.teal,wireframe:true,transparent:true,opacity:.35})));holder.add(ghost);
-  const labH=new T.Group();labH.position.set(0,.68,0);g.add(labH);
+  const labH=new T.Group();labH.position.set(0,.03,.4);g.add(labH);
   const cur=geo.attributes.position.array;let tgt=arr.globe,tilt=0;
   const top={};for(const k in arr){let m=-1;for(let i=1;i<arr[k].length;i+=3)m=Math.max(m,arr[k][i]);top[k]=m;}
-  /* the caption floats just above whatever shape the Earth has become, with the projection's key property underneath */
+  /* the caption sits on the page in front of the figure (never over the Earth), with the projection's key property underneath */
   const set=(k,t,gh,til,sub)=>()=>{tgt=arr[k];fade(ghost,gh?1:0);tilt=til;while(labH.children.length){const o=labH.children[0];labH.remove(o);o.material.map.dispose();o.material.dispose();}
-    const y=.36+top[k]*Math.cos(til)+.1;labH.position.set(0,y+.05,til?-top[k]*Math.sin(-til)*.9:0);labH.add(inkLabel(t,{h:.05}));if(sub){const s=inkLabel(sub,{h:.034,color:"#7A5E1F"});s.position.y=-.05;labH.add(s);}};
+    labH.position.set(0,.03,.44);labH.add(inkLabel(t,{h:.05}));if(sub){const s=inkLabel(sub,{h:.032,color:"#7A5E1F"});s.position.set(0,-.004,.06);labH.add(s);}};
   return{group:g,steps:[set("globe","Globe · all circles equal",0,0,"no distortion: every Tissot circle is the same"),set("cyl","Wrapped on a cylinder",1,0,"touches the globe along the equator"),set("merc","Mercator · conformal",0,-.55,"shapes kept · areas swell toward the poles"),set("ea","Equal-area cylindrical",0,-.55,"areas kept · shapes squashed near the poles"),set("cone","Conic",0,-.55,"true along the standard parallel · mid-latitudes"),set("azi","Azimuthal (polar)",0,-.55,"true at the pole · distortion grows outward")],
     tick(dt){const k=1-Math.pow(.004,dt);let mv=false;for(let i=0;i<cur.length;i++){const d=tgt[i]-cur[i];if(Math.abs(d)>1e-5){cur[i]+=d*k;mv=true;}}if(mv){geo.attributes.position.needsUpdate=true;geo.computeVertexNormals();}holder.rotation.x+=(tilt-holder.rotation.x)*Math.min(1,dt*3);if(tgt===arr.globe&&!RM())holder.rotation.y+=dt*.25;else holder.rotation.y+=(0-holder.rotation.y)*Math.min(1,dt*3);}};};
 /* earth models */

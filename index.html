@@ -231,6 +231,7 @@ body.exploring #reader,body.exploring #caption{display:none!important}
 #reader{position:fixed;z-index:18;left:0;right:0;bottom:0;height:48vh;background:#FBF8F1;border-top:1px solid var(--line2);box-shadow:0 -12px 32px -16px rgba(16,35,63,.3);overflow-y:auto;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(96px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));transition:height .3s;border-radius:16px 16px 0 0}
 #reader{scroll-padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));scroll-padding-top:60px}
 #reader.min{height:64px;overflow:hidden}
+#reader .grab button{white-space:nowrap;flex:none}
 #reader .grab{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:10px 4px;background:#FBF8F1;z-index:2;gap:8px}
 #reader .grab b{font-family:var(--display);font-size:18px;color:#151311;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #reader .page{width:auto;height:auto;padding:4px 6px 24px;overflow:visible}
@@ -491,7 +492,8 @@ body.compact #topbar .tools{max-width:100%;overflow-x:auto;scrollbar-width:none;
 @media (max-width:560px){body.compact #topbar .tools{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}[dir="rtl"] body.compact #topbar .tools{-webkit-mask-image:linear-gradient(270deg,#000 85%,transparent);mask-image:linear-gradient(270deg,#000 85%,transparent)}}
 @media (max-width:560px){body.compact #hDim{display:none!important}body.compact #hud .tb,body.compact .tools .tb{min-width:30px;padding:0 5px!important}}
 body.compact #more{top:calc(var(--hudB,110px) + 6px);bottom:auto}
-body.compact #listenBar,body.compact #caption{top:calc(var(--hudB,110px) + 8px);bottom:auto}
+#reader #caption,#reader #listenBar{position:sticky;top:54px;z-index:1;left:auto;right:auto;bottom:auto;transform:none;width:auto;margin:6px 0 10px;box-shadow:0 6px 16px -10px rgba(16,35,63,.35);border:1px solid var(--line)}
+#reader #caption{background:var(--bg)}#reader #listenBar{display:flex;justify-content:flex-start;background:var(--bg)}#reader #listenBar[hidden],#reader #caption[hidden]{display:none!important}
 body.compact #toast{top:calc(var(--hudB,110px) + 10px)}
 body.compact #openHint{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
 body.compact #reader{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:28px}
@@ -1666,10 +1668,13 @@ function onPageClick(e){const vt=e.target.closest(".vterm");if(vt){const k=+vt.d
 function pageText(){const h=G.compact?$("#rdHost"):G.leftEl;const c=h.cloneNode(true);$$("button,.tools,.folio,.run",c).forEach(x=>x.remove());let t=c.textContent;if(S.vol!=="gisp"&&!G.compact)t+=" "+G.rightEl.textContent;return t.replace(/\s+/g," ").trim();}
 
 /* ---------- layout ---------- */
+/* phones and tablets: the step caption and the read-aloud bar live inside the reading panel, never over the book */
+function dockBars(){const rd=document.getElementById("reader"),grab=rd&&rd.querySelector(".grab");if(!rd||!grab)return;const inPanel=document.body.classList.contains("compact");
+  ["listenBar","caption"].forEach(id=>{const el=document.getElementById(id);if(!el)return;if(inPanel){if(el.parentElement!==rd)grab.after(el);}else if(el.parentElement!==document.body)document.body.appendChild(el);});}
 function placeChrome(){const R=document.documentElement,tb=document.querySelector("#topbar .tools"),hud=document.getElementById("hud");if(!tb||!hud)return;
   R.style.setProperty("--hudW",Math.round(hud.getBoundingClientRect().width)+"px");R.style.setProperty("--topH",Math.round(tb.getBoundingClientRect().bottom)+"px");requestAnimationFrame(()=>{R.style.setProperty("--hudW",Math.round(hud.getBoundingClientRect().width)+"px");R.style.setProperty("--hudB",Math.round(Math.max(hud.getBoundingClientRect().bottom,tb.getBoundingClientRect().bottom))+"px");});}
 addEventListener("resize",()=>{placeChrome();});
-function layoutMode(){const compact=innerWidth<900||innerHeight<520;if(compact===G.compact&&G.leftEl&&G._laid)return;G._laid=1;G.compact=compact;document.body.classList.toggle("compact",compact);placeChrome();
+function layoutMode(){const compact=innerWidth<900||innerHeight<520;if(compact===G.compact&&G.leftEl&&G._laid)return;G._laid=1;G.compact=compact;document.body.classList.toggle("compact",compact);placeChrome();dockBars();
   $("#reader").hidden=!compact;if(G.leftObj){G.leftObj.visible=!compact;G.rightObj.visible=!compact&&S.vol!=="gisp";}
   if(G.leftEl){renderSpread({keepTex:true,noDemo:true});staticTex(curSpread());}if(G.cam)resetView(true);}
 
@@ -2053,24 +2058,45 @@ function wire(){
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6||!G.demo||S.vol!=="gisp"||curSpread()===0)return;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);if(ray.intersectObject(G.demo.group,true).length){const n=(G.demo.step+1)%G.demo.steps.length;setDemoStep(n);captionStep(n);clearTimeout(window._capT);if(!W.on)window._capT=setTimeout(()=>{$("#caption").hidden=true;renderSpread({keepTex:true,noDemo:true});},5200);}});
   // easy mouse turning: click near either outer edge of the open book
   const edgeHit=edgeAt;
-  /* hand-turning: on the book the pointer is a hand and a drag turns the page; the desk around it still rotates the view */
-  const cv=G.r.domElement,bookHit=e=>{const rc=cv.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
-    const p=new THREE.Vector3();if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p))return null;
-    /* the figure itself (solid parts near its base) stays clickable; the rest of the page is a hand */
-    if(!G.closed&&G.demo&&G.demo.group.visible){const hit=ray.intersectObject(G.demo.group,true).find(o=>o.object.isMesh&&!o.object.material.transparent);const fx=G.demoRoot.position.x;
-      if(hit&&Math.hypot(p.x-fx,p.z)<.42)return"figure";}
-    const x0=G.closed?(G.closedSide>0?-.04:-(PW+.08)):-(PW+.08),x1=G.closed?(G.closedSide>0?PW+.08:.04):PW+.08;
-    return p.x>=x0&&p.x<=x1&&Math.abs(p.z)<=PD/2+.05?"book":null;};
-  let hd=null;
+  /* ---- how the mouse / finger behaves on the book (like holding a real book) ----
+     desktop: outer edge of a page -> drag to turn it; anywhere else on the book -> hand drags (slides) the book;
+              wheel or pinch -> zoom toward the pointer; double-click -> zoom in / back to the whole book;
+              desk around the book -> rotate the view.
+     phones/tablets: swipe across the book turns the page, pinch zooms, double-tap zooms. */
+  const cv=G.r.domElement,rayAt=e=>{const rc=cv.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);return ray;},
+    planeAt=e=>{const p=new THREE.Vector3();return rayAt(e).ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p)?p:null;},
+    bookHit=e=>{const ray=rayAt(e),p=new THREE.Vector3();if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p))return null;
+      if(!G.closed&&G.demo&&G.demo.group.visible){const hit=ray.intersectObject(G.demo.group,true).find(o=>o.object.isMesh&&!o.object.material.transparent);if(hit&&Math.hypot(p.x-G.demoRoot.position.x,p.z)<.42)return"figure";}
+      const x0=G.closed?(G.closedSide>0?-.04:-(PW+.08)):-(PW+.08),x1=G.closed?(G.closedSide>0?PW+.08:.04):PW+.08;
+      if(!(p.x>=x0&&p.x<=x1&&Math.abs(p.z)<=PD/2+.05))return null;return(!G.closed&&!G.compact&&edgeAt(e))?"edge":"book";};
+  const camDist=()=>G.cam.position.distanceTo(G.ctl.target);
+  function zoomAt(cx,cy,f){if(G.webOn)return;G.fly=null;const p=planeAt({clientX:cx,clientY:cy})||G.ctl.target.clone(),t=G.ctl.target,d=camDist(),nd=Math.min(G.ctl.maxDistance,Math.max(G.ctl.minDistance,d*f)),k=nd/d;
+    const off=G.cam.position.clone().sub(t);t.add(p.clone().sub(t).multiplyScalar(1-k));t.y=Math.max(0,t.y);G.cam.position.copy(t).add(off.multiplyScalar(k));G.view="free";}
+  function panBy(dx,dy){const d=camDist(),wpp=2*d*Math.tan(G.cam.fov*Math.PI/360)/innerHeight,right=new THREE.Vector3().setFromMatrixColumn(G.cam.matrixWorld,0),fwd=new THREE.Vector3().setFromMatrixColumn(G.cam.matrixWorld,1);fwd.y=0;fwd.normalize();right.y=0;right.normalize();
+    const el=Math.asin(Math.min(1,(G.cam.position.y-G.ctl.target.y)/d)),mv=right.multiplyScalar(-dx*wpp).add(fwd.multiplyScalar(dy*wpp/Math.max(.35,Math.sin(el))));G.fly=null;G.cam.position.add(mv);G.ctl.target.add(mv);G.view="free";}
+  let hd=null;const ptrs=new Map();let pinch=null;
   const turnBy=dx=>{if(G.closed){openBook();return;}go(curSpread()+fwdFor(dx<0?"right":"left"));};
-  cv.addEventListener("pointerdown",e=>{if(G.webOn||G.is2D)return;if(bookHit(e)==="book"){G.ctl.enabled=false;hd={x:e.clientX,y:e.clientY};cv.style.cursor="grabbing";}},{capture:true});
-  addEventListener("pointerup",e=>{if(!hd)return;const dx=e.clientX-hd.x,dy=e.clientY-hd.y;hd=null;G.ctl.enabled=true;cv.style.cursor="grab";
-    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2&&!busy){G.dragTurnAt=performance.now();turnBy(dx);}});
-  addEventListener("pointercancel",()=>{if(hd){hd=null;G.ctl.enabled=true;}});
-  cv.addEventListener("pointermove",e=>{if(hd||e.buttons)return;const h=G.webOn?null:bookHit(e);cv.style.cursor=h==="figure"?"pointer":h==="book"?"grab":"";});
-  /* the HTML text page: its outer edge is a grab handle too (the inner text stays selectable) */
-  [G.leftEl,G.rightEl].forEach(el=>{el.addEventListener("pointermove",e=>{if(hd||e.buttons)return;el.style.cursor=edgeAt(e)&&!e.target.closest("button,a,input,textarea")?"grab":"";});
-    el.addEventListener("pointerdown",e=>{if(e.target.closest("button,a,input,textarea,.opt,.vterm"))return;if(edgeAt(e)){hd={x:e.clientX,y:e.clientY};el.style.cursor="grabbing";e.preventDefault();}});});
+  const endHold=()=>{hd=null;G.ctl.enabled=true;};
+  cv.addEventListener("pointerdown",e=>{if(G.webOn||G.is2D)return;ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+    if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])};hd=null;G.ctl.enabled=false;e.stopImmediatePropagation();return;}
+    const h=bookHit(e);if(h==="book"||h==="edge"){G.ctl.enabled=false;hd={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,mode:(h==="edge"||G.compact||G.closed)?"turn":"pan"};cv.style.cursor="grabbing";}},{capture:true});
+  cv.addEventListener("pointermove",e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(d>0&&pinch.d>0)zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,pinch.d/d);pinch.d=d;return;}
+    if(hd){if(hd.mode==="pan"){panBy(e.clientX-hd.lx,e.clientY-hd.ly);}hd.lx=e.clientX;hd.ly=e.clientY;return;}
+    if(e.buttons)return;const h=G.webOn?null:bookHit(e);cv.style.cursor=h==="figure"?"pointer":h==="edge"?(edgeAt(e)==="right"?"e-resize":"w-resize"):h==="book"?(G.closed?"pointer":G.compact?"grab":"grab"):"";},{capture:true});
+  const up=e=>{ptrs.delete(e.pointerId);if(pinch){if(ptrs.size<2){pinch=null;G.ctl.enabled=true;}return;}if(!hd)return;const dx=e.clientX-hd.x,dy=e.clientY-hd.y,m=hd.mode;endHold();cv.style.cursor="grab";
+    if(m==="turn"&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2&&!busy){G.dragTurnAt=performance.now();turnBy(dx);}
+    if(m==="pan"&&Math.hypot(dx,dy)>6)G.dragTurnAt=performance.now();};
+  addEventListener("pointerup",up);addEventListener("pointercancel",e=>{ptrs.delete(e.pointerId);pinch=null;endHold();});
+  /* wheel / trackpad pinch: zoom toward the pointer (horizontal swipe or Shift+wheel still turns pages, handled below) */
+  cv.addEventListener("wheel",e=>{if(G.webOn||e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();e.stopImmediatePropagation();
+    const dy=e.deltaMode===1?e.deltaY*16:e.deltaY;zoomAt(e.clientX,e.clientY,Math.exp(Math.max(-60,Math.min(60,dy))*(e.ctrlKey?.012:.0016)));},{capture:true,passive:false});
+  /* double-click / double-tap: zoom in where you point, again to return to the whole book */
+  cv.addEventListener("dblclick",e=>{if(G.webOn||G.closed)return;const fit=viewFor("book"),fd=Math.hypot(fit.p[0]-fit.t[0],fit.p[1]-fit.t[1],fit.p[2]-fit.t[2]);if(camDist()<fd*.8){resetView();}else zoomAt(e.clientX,e.clientY,.55);});
+  /* the HTML text page: its outer edge turns the page; the text itself stays selectable */
+  [G.leftEl,G.rightEl].forEach(el=>{el.addEventListener("pointermove",e=>{if(hd||e.buttons)return;const h=edgeAt(e);el.style.cursor=h&&!e.target.closest("button,a,input,textarea")?(h==="right"?"e-resize":"w-resize"):"";});
+    el.addEventListener("pointerdown",e=>{if(e.target.closest("button,a,input,textarea,.opt,.vterm"))return;if(edgeAt(e)){hd={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,mode:"turn"};e.preventDefault();}});
+    el.addEventListener("wheel",e=>{if(G.webOn||e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();zoomAt(e.clientX,e.clientY,Math.exp(Math.max(-60,Math.min(60,e.deltaY))*(e.ctrlKey?.012:.0016)));},{passive:false});});
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;if(G.closed){openBook();return;}const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
   $("#edgePrev").onclick=()=>go(curSpread()+fwdFor("left"));$("#edgeNext").onclick=()=>go(curSpread()+fwdFor("right"));
   // mouse wheel with Shift (or a horizontal trackpad swipe) turns pages; plain wheel still zooms

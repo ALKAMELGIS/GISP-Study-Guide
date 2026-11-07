@@ -231,6 +231,7 @@ body.exploring #reader,body.exploring #caption{display:none!important}
 #reader{position:fixed;z-index:18;left:0;right:0;bottom:0;height:48vh;background:#FBF8F1;border-top:1px solid var(--line2);box-shadow:0 -12px 32px -16px rgba(16,35,63,.3);overflow-y:auto;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(96px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));transition:height .3s;border-radius:16px 16px 0 0}
 #reader{scroll-padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));scroll-padding-top:60px}
 #reader.min{height:64px;overflow:hidden}
+#reader .grab button{white-space:nowrap;flex:none}
 #reader .grab{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:10px 4px;background:#FBF8F1;z-index:2;gap:8px}
 #reader .grab b{font-family:var(--display);font-size:18px;color:#151311;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #reader .page{width:auto;height:auto;padding:4px 6px 24px;overflow:visible}
@@ -491,7 +492,8 @@ body.compact #topbar .tools{max-width:100%;overflow-x:auto;scrollbar-width:none;
 @media (max-width:560px){body.compact #topbar .tools{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}[dir="rtl"] body.compact #topbar .tools{-webkit-mask-image:linear-gradient(270deg,#000 85%,transparent);mask-image:linear-gradient(270deg,#000 85%,transparent)}}
 @media (max-width:560px){body.compact #hDim{display:none!important}body.compact #hud .tb,body.compact .tools .tb{min-width:30px;padding:0 5px!important}}
 body.compact #more{top:calc(var(--hudB,110px) + 6px);bottom:auto}
-body.compact #listenBar,body.compact #caption{top:calc(var(--hudB,110px) + 8px);bottom:auto}
+#reader #caption,#reader #listenBar{position:sticky;top:54px;z-index:1;left:auto;right:auto;bottom:auto;transform:none;width:auto;margin:6px 0 10px;box-shadow:0 6px 16px -10px rgba(16,35,63,.35);border:1px solid var(--line)}
+#reader #caption{background:var(--bg)}#reader #listenBar{display:flex;justify-content:flex-start;background:var(--bg)}#reader #listenBar[hidden],#reader #caption[hidden]{display:none!important}
 body.compact #toast{top:calc(var(--hudB,110px) + 10px)}
 body.compact #openHint{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
 body.compact #reader{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:28px}

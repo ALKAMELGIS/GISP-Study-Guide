@@ -182,7 +182,7 @@ function edgeAt(e){if(G.closed||G.webOn||G.compact||!G.r)return null;const rc=G.
 function fwdFor(side){const rev=isAR()&&S.vol==="gisp";return side==="right"?(rev?-1:1):(rev?1:-1);}
 function onPageClick(e){const vt=e.target.closest(".vterm");if(vt){const k=+vt.dataset.vstep;if(G.demo){setDemoStep(k);try{captionStep(k);}catch(_){}}$$(".vterm.on").forEach(x=>x.classList.remove("on"));vt.classList.add("on");return;}
   const b=e.target.closest("button");
-  if(!b){if(G.webOn||G.compact||getSelection().toString()||e.target.closest("a,input,textarea,mark,.opt,.flap,summary,label"))return;const h=edgeAt(e);if(h)go(curSpread()+fwdFor(h));return;}
+  if(!b){if(performance.now()-(G.dragTurnAt||0)<400)return;if(G.webOn||G.compact||getSelection().toString()||e.target.closest("a,input,textarea,mark,.opt,.flap,summary,label"))return;const h=edgeAt(e);if(h)go(curSpread()+fwdFor(h));return;}
   const s=curSpread();
   const act=b.dataset.act;
   if(act==="listen"){speak(pageText());return;}
@@ -201,7 +201,10 @@ function onPageClick(e){const vt=e.target.closest(".vterm");if(vt){const k=+vt.d
 function pageText(){const h=G.compact?$("#rdHost"):G.leftEl;const c=h.cloneNode(true);$$("button,.tools,.folio,.run",c).forEach(x=>x.remove());let t=c.textContent;if(S.vol!=="gisp"&&!G.compact)t+=" "+G.rightEl.textContent;return t.replace(/\s+/g," ").trim();}
 
 /* ---------- layout ---------- */
-function layoutMode(){const compact=innerWidth<900||innerHeight<520;if(compact===G.compact&&G.leftEl&&G._laid)return;G._laid=1;G.compact=compact;document.body.classList.toggle("compact",compact);
+function placeChrome(){const R=document.documentElement,tb=document.querySelector("#topbar .tools"),hud=document.getElementById("hud");if(!tb||!hud)return;
+  R.style.setProperty("--hudW",Math.round(hud.getBoundingClientRect().width)+"px");R.style.setProperty("--topH",Math.round(tb.getBoundingClientRect().bottom)+"px");requestAnimationFrame(()=>{R.style.setProperty("--hudW",Math.round(hud.getBoundingClientRect().width)+"px");R.style.setProperty("--hudB",Math.round(Math.max(hud.getBoundingClientRect().bottom,tb.getBoundingClientRect().bottom))+"px");});}
+addEventListener("resize",()=>{placeChrome();});
+function layoutMode(){const compact=innerWidth<900||innerHeight<520;if(compact===G.compact&&G.leftEl&&G._laid)return;G._laid=1;G.compact=compact;document.body.classList.toggle("compact",compact);placeChrome();
   $("#reader").hidden=!compact;if(G.leftObj){G.leftObj.visible=!compact;G.rightObj.visible=!compact&&S.vol!=="gisp";}
   if(G.leftEl){renderSpread({keepTex:true,noDemo:true});staticTex(curSpread());}if(G.cam)resetView(true);}
 
@@ -585,7 +588,24 @@ function wire(){
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6||!G.demo||S.vol!=="gisp"||curSpread()===0)return;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);if(ray.intersectObject(G.demo.group,true).length){const n=(G.demo.step+1)%G.demo.steps.length;setDemoStep(n);captionStep(n);clearTimeout(window._capT);if(!W.on)window._capT=setTimeout(()=>{$("#caption").hidden=true;renderSpread({keepTex:true,noDemo:true});},5200);}});
   // easy mouse turning: click near either outer edge of the open book
   const edgeHit=edgeAt;
-  G.r.domElement.addEventListener("pointermove",e=>{if(e.buttons)return;const h=edgeHit(e);G.r.domElement.style.cursor=h?(h==="right"?"e-resize":"w-resize"):"";});
+  /* hand-turning: on the book the pointer is a hand and a drag turns the page; the desk around it still rotates the view */
+  const cv=G.r.domElement,bookHit=e=>{const rc=cv.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
+    const p=new THREE.Vector3();if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p))return null;
+    /* the figure itself (solid parts near its base) stays clickable; the rest of the page is a hand */
+    if(!G.closed&&G.demo&&G.demo.group.visible){const hit=ray.intersectObject(G.demo.group,true).find(o=>o.object.isMesh&&!o.object.material.transparent);const fx=G.demoRoot.position.x;
+      if(hit&&Math.hypot(p.x-fx,p.z)<.42)return"figure";}
+    const x0=G.closed?(G.closedSide>0?-.04:-(PW+.08)):-(PW+.08),x1=G.closed?(G.closedSide>0?PW+.08:.04):PW+.08;
+    return p.x>=x0&&p.x<=x1&&Math.abs(p.z)<=PD/2+.05?"book":null;};
+  let hd=null;
+  const turnBy=dx=>{if(G.closed){openBook();return;}go(curSpread()+fwdFor(dx<0?"right":"left"));};
+  cv.addEventListener("pointerdown",e=>{if(G.webOn||G.is2D)return;if(bookHit(e)==="book"){G.ctl.enabled=false;hd={x:e.clientX,y:e.clientY};cv.style.cursor="grabbing";}},{capture:true});
+  addEventListener("pointerup",e=>{if(!hd)return;const dx=e.clientX-hd.x,dy=e.clientY-hd.y;hd=null;G.ctl.enabled=true;cv.style.cursor="grab";
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2&&!busy){G.dragTurnAt=performance.now();turnBy(dx);}});
+  addEventListener("pointercancel",()=>{if(hd){hd=null;G.ctl.enabled=true;}});
+  cv.addEventListener("pointermove",e=>{if(hd||e.buttons)return;const h=G.webOn?null:bookHit(e);cv.style.cursor=h==="figure"?"pointer":h==="book"?"grab":"";});
+  /* the HTML text page: its outer edge is a grab handle too (the inner text stays selectable) */
+  [G.leftEl,G.rightEl].forEach(el=>{el.addEventListener("pointermove",e=>{if(hd||e.buttons)return;el.style.cursor=edgeAt(e)&&!e.target.closest("button,a,input,textarea")?"grab":"";});
+    el.addEventListener("pointerdown",e=>{if(e.target.closest("button,a,input,textarea,.opt,.vterm"))return;if(edgeAt(e)){hd={x:e.clientX,y:e.clientY};el.style.cursor="grabbing";e.preventDefault();}});});
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;if(G.closed){openBook();return;}const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
   $("#edgePrev").onclick=()=>go(curSpread()+fwdFor("left"));$("#edgeNext").onclick=()=>go(curSpread()+fwdFor("right"));
   // mouse wheel with Shift (or a horizontal trackpad swipe) turns pages; plain wheel still zooms
@@ -607,7 +627,7 @@ const CHROME="#topbar,#hud,#more,#views,#listenBar,#sign,#openHint,.sign-inline,
 function trAll(root){const roots=root?[root]:$$(CHROME);roots.forEach(r=>{if(!r)return;const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.parentElement&&n.parentElement.closest(".qt,.qo,.fc,.msg,.note q,.vol .cover b,input,textarea"))continue;trNode(n);}[r,...r.querySelectorAll("*")].forEach(trEl);});}
 let trBusy=false;const MO=new MutationObserver(ms=>{if(trBusy||!isAR())return;trBusy=true;try{ms.forEach(m=>{const t=m.target.nodeType===3?m.target.parentElement:m.target;if(t&&t.closest&&t.closest(CHROME))trAll(t.closest(CHROME));});}finally{trBusy=false;}});
 function setLang(l){S.lang=l;save();const ar=l==="ar";document.documentElement.lang=ar?"ar":"en";document.documentElement.dir=ar?"rtl":"ltr";$("#langBtn").innerHTML=ar?'<span lang="en">EN</span>':'<span lang="ar">ع</span>';$("#langBtn").setAttribute("aria-label",ar?"Switch to English":"التبديل إلى العربية");$("#langBtn").title=ar?"Switch to English":"التبديل إلى العربية";
-  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}if(G.closed)closeBook(true);if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
+  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}placeChrome();if(G.closed)closeBook(true);if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
 
 /* ---------- boot ---------- */
 async function boot(){

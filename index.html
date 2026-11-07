@@ -481,6 +481,20 @@ body.web #openHint{display:none!important}
 .vterm span{font-size:.72em;color:var(--navy);opacity:.75}
 .vterm:hover,.vterm:focus-visible{color:var(--navy);border-bottom-style:solid;background:rgba(31,78,140,.07)}
 .vterm.on{color:var(--navy);border-bottom:2px solid var(--navy)}
+
+/* phones and tablets: the book controls move to the top, under the tool bar, so they never cover the reading panel */
+/* one line at the top: book controls on one side, tools on the other */
+body.compact #hud{top:calc(10px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:max(10px,env(safe-area-inset-left,0px))!important;right:auto!important;transform:none!important;max-width:calc(100vw - 20px)}
+[dir="rtl"] body.compact #hud,body.compact[dir="rtl"] #hud{left:auto!important;right:max(10px,env(safe-area-inset-right,0px))!important}
+body.compact #topbar{max-width:calc(100vw - var(--hudW,300px) - 28px)}
+body.compact #topbar .tools{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+@media (max-width:560px){body.compact #topbar .tools{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}[dir="rtl"] body.compact #topbar .tools{-webkit-mask-image:linear-gradient(270deg,#000 85%,transparent);mask-image:linear-gradient(270deg,#000 85%,transparent)}}
+@media (max-width:560px){body.compact #hDim{display:none!important}body.compact #hud .tb,body.compact .tools .tb{min-width:30px;padding:0 5px!important}}
+body.compact #more{top:calc(var(--hudB,110px) + 6px);bottom:auto}
+body.compact #listenBar,body.compact #caption{top:calc(var(--hudB,110px) + 8px);bottom:auto}
+body.compact #toast{top:calc(var(--hudB,110px) + 10px)}
+body.compact #openHint{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+body.compact #reader{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:28px}
 </style>
 
 <div id="loader" role="status" aria-live="polite"><div class="box"><svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><path d="M24 12c-5-4-12-5-18-4v28c6-1 13 0 18 4 5-4 12-5 18-4V8c-6-1-13 0-18 4z" fill="none" stroke="#161616" stroke-width="1.6"/><path d="M24 12v28" stroke="#161616" stroke-width="1.6"/></svg><h1>GISP Library</h1><div class="bar"><i id="ldbar"></i></div><span class="label" id="ldmsg">Binding the book</span></div></div>
@@ -911,7 +925,7 @@ function initScene(){
   const css=new T.CSS3DRenderer();$("#css3d").appendChild(css.domElement);css.domElement.style.pointerEvents="none";
   const scene=new T.Scene(),cssScene=new T.Scene();
   const cam=new T.PerspectiveCamera(32,1,.02,60);
-  const ctl=new T.OrbitControls(cam,r.domElement);ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.minDistance=.9;ctl.maxDistance=5.2;ctl.minPolarAngle=.05;ctl.maxPolarAngle=1.25;ctl.screenSpacePanning=true;ctl.addEventListener("start",()=>{ctl.autoRotate=false;G.orbitPending=false;G.fly=null;});
+  const ctl=new T.OrbitControls(cam,r.domElement);ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.minDistance=.9;ctl.maxDistance=12;ctl.minPolarAngle=.05;ctl.maxPolarAngle=1.25;ctl.screenSpacePanning=true;ctl.addEventListener("start",()=>{ctl.autoRotate=false;G.orbitPending=false;G.fly=null;});
   const hemi=new T.HemisphereLight(0xFFF8EC,0xB9A88A,.62);scene.add(hemi);
   const sun=new T.DirectionalLight(0xFFF3DF,1.15);sun.position.set(-2.4,4.2,1.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-2.4,right:2.4,top:2.4,bottom:-2.4,near:.5,far:12});sun.shadow.bias=-.0004;sun.shadow.radius=4;scene.add(sun);
@@ -1067,8 +1081,7 @@ function turnPage(dir,frontSpec,backSpec,mid){
 function freeRect(opts={}){const W=innerWidth,H=innerHeight,vis=e=>{if(!e)return null;const s=getComputedStyle(e);if(s.display==="none"||s.visibility==="hidden")return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0?r:null;};
   let top=8,bottom=H-8,left=10,right=W-10;
   const tools=vis(document.querySelector("#topbar .tools"));if(tools)top=Math.max(top,tools.bottom+10);
-  const lows=["hud","sign","openHint","listenBar"].map(id=>vis(document.getElementById(id)));
-  lows.forEach(r=>{if(r)bottom=Math.min(bottom,r.top-10);});
+  ["hud","sign","openHint","listenBar"].map(id=>vis(document.getElementById(id))).forEach(r=>{if(!r)return;if((r.top+r.bottom)/2<H/2)top=Math.max(top,r.bottom+10);else bottom=Math.min(bottom,r.top-10);});
   if(G.compact&&!opts.closed){const rd=vis(document.getElementById("reader"));if(rd)bottom=Math.min(bottom,rd.top-6);}
   const ed=vis(document.getElementById("edgePrev"));if(ed){left=Math.max(left,ed.right+4);right=Math.min(right,W-(ed.right+4));}
   if(bottom-top<H*.3){top=8;bottom=H-8;}
@@ -1122,8 +1135,8 @@ function setView(kind){
 function set2D(on){
   const cam=G.cam,ctl=G.ctl;G.is2D=!!on;ctl.autoRotate=false;G.orbitPending=false;
   cam.fov=on?7:32;cam.near=on?.5:.02;cam.far=on?260:60;cam.updateProjectionMatrix();
-  ctl.enableRotate=!on;ctl.minPolarAngle=on?0:.05;ctl.minDistance=on?4:.9;ctl.maxDistance=on?80:5.2;
-  G.scene.fog=on?null:new THREE.Fog(G.scene.background.getHex(),5,13);
+  ctl.enableRotate=!on;ctl.minPolarAngle=on?0:.05;ctl.minDistance=on?4:.9;ctl.maxDistance=on?80:12;
+  G.scene.fog=on?null:new THREE.Fog(G.scene.background.getHex(),9,24);
   const kind=G.view==="read"?"read":document.body.classList.contains("exploring")?"figure":"top";
   if(on)flyTo(viewPreset(kind),true);else setView(G.view&&G.view!=="top"?G.view:"book");
 }
@@ -1150,7 +1163,7 @@ function resetView(instant){if(G.closed){flyTo(viewClosed(),instant);return;}G.v
 function setTheme(night){
   const T=THREE;document.documentElement.dataset.night=night?"1":"0";
   if(G.desk.material.map)G.desk.material.map.dispose();G.desk.material.map=woodTex(night);G.desk.material.needsUpdate=true;
-  const bg=night?0x0B111B:0xE9E5DD;G.scene.background=new T.Color(bg);G.scene.fog=G.is2D?null:new T.Fog(bg,5,13);
+  const bg=night?0x0B111B:0xE9E5DD;G.scene.background=new T.Color(bg);G.scene.fog=G.is2D?null:new T.Fog(bg,9,24);
   G.hemi.intensity=night?.22:.62;G.sun.intensity=night?.35:1.15;G.sun.color.set(night?0x9DB4E0:0xFFF3DF);G.lamp.intensity=night?2.4:0;G.r.toneMappingExposure=night?1.2:1.05;
 }
 
@@ -1634,7 +1647,7 @@ function edgeAt(e){if(G.closed||G.webOn||G.compact||!G.r)return null;const rc=G.
 function fwdFor(side){const rev=isAR()&&S.vol==="gisp";return side==="right"?(rev?-1:1):(rev?1:-1);}
 function onPageClick(e){const vt=e.target.closest(".vterm");if(vt){const k=+vt.dataset.vstep;if(G.demo){setDemoStep(k);try{captionStep(k);}catch(_){}}$$(".vterm.on").forEach(x=>x.classList.remove("on"));vt.classList.add("on");return;}
   const b=e.target.closest("button");
-  if(!b){if(G.webOn||G.compact||getSelection().toString()||e.target.closest("a,input,textarea,mark,.opt,.flap,summary,label"))return;const h=edgeAt(e);if(h)go(curSpread()+fwdFor(h));return;}
+  if(!b){if(performance.now()-(G.dragTurnAt||0)<400)return;if(G.webOn||G.compact||getSelection().toString()||e.target.closest("a,input,textarea,mark,.opt,.flap,summary,label"))return;const h=edgeAt(e);if(h)go(curSpread()+fwdFor(h));return;}
   const s=curSpread();
   const act=b.dataset.act;
   if(act==="listen"){speak(pageText());return;}
@@ -1653,7 +1666,10 @@ function onPageClick(e){const vt=e.target.closest(".vterm");if(vt){const k=+vt.d
 function pageText(){const h=G.compact?$("#rdHost"):G.leftEl;const c=h.cloneNode(true);$$("button,.tools,.folio,.run",c).forEach(x=>x.remove());let t=c.textContent;if(S.vol!=="gisp"&&!G.compact)t+=" "+G.rightEl.textContent;return t.replace(/\s+/g," ").trim();}
 
 /* ---------- layout ---------- */
-function layoutMode(){const compact=innerWidth<900||innerHeight<520;if(compact===G.compact&&G.leftEl&&G._laid)return;G._laid=1;G.compact=compact;document.body.classList.toggle("compact",compact);
+function placeChrome(){const R=document.documentElement,tb=document.querySelector("#topbar .tools"),hud=document.getElementById("hud");if(!tb||!hud)return;
+  R.style.setProperty("--hudW",Math.round(hud.getBoundingClientRect().width)+"px");R.style.setProperty("--topH",Math.round(tb.getBoundingClientRect().bottom)+"px");requestAnimationFrame(()=>{R.style.setProperty("--hudW",Math.round(hud.getBoundingClientRect().width)+"px");R.style.setProperty("--hudB",Math.round(Math.max(hud.getBoundingClientRect().bottom,tb.getBoundingClientRect().bottom))+"px");});}
+addEventListener("resize",()=>{placeChrome();});
+function layoutMode(){const compact=innerWidth<900||innerHeight<520;if(compact===G.compact&&G.leftEl&&G._laid)return;G._laid=1;G.compact=compact;document.body.classList.toggle("compact",compact);placeChrome();
   $("#reader").hidden=!compact;if(G.leftObj){G.leftObj.visible=!compact;G.rightObj.visible=!compact&&S.vol!=="gisp";}
   if(G.leftEl){renderSpread({keepTex:true,noDemo:true});staticTex(curSpread());}if(G.cam)resetView(true);}
 
@@ -2037,7 +2053,24 @@ function wire(){
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6||!G.demo||S.vol!=="gisp"||curSpread()===0)return;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);if(ray.intersectObject(G.demo.group,true).length){const n=(G.demo.step+1)%G.demo.steps.length;setDemoStep(n);captionStep(n);clearTimeout(window._capT);if(!W.on)window._capT=setTimeout(()=>{$("#caption").hidden=true;renderSpread({keepTex:true,noDemo:true});},5200);}});
   // easy mouse turning: click near either outer edge of the open book
   const edgeHit=edgeAt;
-  G.r.domElement.addEventListener("pointermove",e=>{if(e.buttons)return;const h=edgeHit(e);G.r.domElement.style.cursor=h?(h==="right"?"e-resize":"w-resize"):"";});
+  /* hand-turning: on the book the pointer is a hand and a drag turns the page; the desk around it still rotates the view */
+  const cv=G.r.domElement,bookHit=e=>{const rc=cv.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
+    const p=new THREE.Vector3();if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p))return null;
+    /* the figure itself (solid parts near its base) stays clickable; the rest of the page is a hand */
+    if(!G.closed&&G.demo&&G.demo.group.visible){const hit=ray.intersectObject(G.demo.group,true).find(o=>o.object.isMesh&&!o.object.material.transparent);const fx=G.demoRoot.position.x;
+      if(hit&&Math.hypot(p.x-fx,p.z)<.42)return"figure";}
+    const x0=G.closed?(G.closedSide>0?-.04:-(PW+.08)):-(PW+.08),x1=G.closed?(G.closedSide>0?PW+.08:.04):PW+.08;
+    return p.x>=x0&&p.x<=x1&&Math.abs(p.z)<=PD/2+.05?"book":null;};
+  let hd=null;
+  const turnBy=dx=>{if(G.closed){openBook();return;}go(curSpread()+fwdFor(dx<0?"right":"left"));};
+  cv.addEventListener("pointerdown",e=>{if(G.webOn||G.is2D)return;if(bookHit(e)==="book"){G.ctl.enabled=false;hd={x:e.clientX,y:e.clientY};cv.style.cursor="grabbing";}},{capture:true});
+  addEventListener("pointerup",e=>{if(!hd)return;const dx=e.clientX-hd.x,dy=e.clientY-hd.y;hd=null;G.ctl.enabled=true;cv.style.cursor="grab";
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2&&!busy){G.dragTurnAt=performance.now();turnBy(dx);}});
+  addEventListener("pointercancel",()=>{if(hd){hd=null;G.ctl.enabled=true;}});
+  cv.addEventListener("pointermove",e=>{if(hd||e.buttons)return;const h=G.webOn?null:bookHit(e);cv.style.cursor=h==="figure"?"pointer":h==="book"?"grab":"";});
+  /* the HTML text page: its outer edge is a grab handle too (the inner text stays selectable) */
+  [G.leftEl,G.rightEl].forEach(el=>{el.addEventListener("pointermove",e=>{if(hd||e.buttons)return;el.style.cursor=edgeAt(e)&&!e.target.closest("button,a,input,textarea")?"grab":"";});
+    el.addEventListener("pointerdown",e=>{if(e.target.closest("button,a,input,textarea,.opt,.vterm"))return;if(edgeAt(e)){hd={x:e.clientX,y:e.clientY};el.style.cursor="grabbing";e.preventDefault();}});});
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;if(G.closed){openBook();return;}const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
   $("#edgePrev").onclick=()=>go(curSpread()+fwdFor("left"));$("#edgeNext").onclick=()=>go(curSpread()+fwdFor("right"));
   // mouse wheel with Shift (or a horizontal trackpad swipe) turns pages; plain wheel still zooms
@@ -2059,7 +2092,7 @@ const CHROME="#topbar,#hud,#more,#views,#listenBar,#sign,#openHint,.sign-inline,
 function trAll(root){const roots=root?[root]:$$(CHROME);roots.forEach(r=>{if(!r)return;const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.parentElement&&n.parentElement.closest(".qt,.qo,.fc,.msg,.note q,.vol .cover b,input,textarea"))continue;trNode(n);}[r,...r.querySelectorAll("*")].forEach(trEl);});}
 let trBusy=false;const MO=new MutationObserver(ms=>{if(trBusy||!isAR())return;trBusy=true;try{ms.forEach(m=>{const t=m.target.nodeType===3?m.target.parentElement:m.target;if(t&&t.closest&&t.closest(CHROME))trAll(t.closest(CHROME));});}finally{trBusy=false;}});
 function setLang(l){S.lang=l;save();const ar=l==="ar";document.documentElement.lang=ar?"ar":"en";document.documentElement.dir=ar?"rtl":"ltr";$("#langBtn").innerHTML=ar?'<span lang="en">EN</span>':'<span lang="ar">ع</span>';$("#langBtn").setAttribute("aria-label",ar?"Switch to English":"التبديل إلى العربية");$("#langBtn").title=ar?"Switch to English":"التبديل إلى العربية";
-  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}if(G.closed)closeBook(true);if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
+  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}placeChrome();if(G.closed)closeBook(true);if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
 
 /* ---------- boot ---------- */
 async function boot(){

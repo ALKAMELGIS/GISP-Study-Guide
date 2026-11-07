@@ -88,7 +88,7 @@ function initScene(){
   const css=new T.CSS3DRenderer();$("#css3d").appendChild(css.domElement);css.domElement.style.pointerEvents="none";
   const scene=new T.Scene(),cssScene=new T.Scene();
   const cam=new T.PerspectiveCamera(32,1,.02,60);
-  const ctl=new T.OrbitControls(cam,r.domElement);ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.minDistance=.9;ctl.maxDistance=5.2;ctl.minPolarAngle=.05;ctl.maxPolarAngle=1.25;ctl.screenSpacePanning=true;ctl.addEventListener("start",()=>{ctl.autoRotate=false;G.orbitPending=false;G.fly=null;});
+  const ctl=new T.OrbitControls(cam,r.domElement);ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.minDistance=.9;ctl.maxDistance=12;ctl.minPolarAngle=.05;ctl.maxPolarAngle=1.25;ctl.screenSpacePanning=true;ctl.addEventListener("start",()=>{ctl.autoRotate=false;G.orbitPending=false;G.fly=null;});
   const hemi=new T.HemisphereLight(0xFFF8EC,0xB9A88A,.62);scene.add(hemi);
   const sun=new T.DirectionalLight(0xFFF3DF,1.15);sun.position.set(-2.4,4.2,1.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-2.4,right:2.4,top:2.4,bottom:-2.4,near:.5,far:12});sun.shadow.bias=-.0004;sun.shadow.radius=4;scene.add(sun);
@@ -244,8 +244,7 @@ function turnPage(dir,frontSpec,backSpec,mid){
 function freeRect(opts={}){const W=innerWidth,H=innerHeight,vis=e=>{if(!e)return null;const s=getComputedStyle(e);if(s.display==="none"||s.visibility==="hidden")return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0?r:null;};
   let top=8,bottom=H-8,left=10,right=W-10;
   const tools=vis(document.querySelector("#topbar .tools"));if(tools)top=Math.max(top,tools.bottom+10);
-  const lows=["hud","sign","openHint","listenBar"].map(id=>vis(document.getElementById(id)));
-  lows.forEach(r=>{if(r)bottom=Math.min(bottom,r.top-10);});
+  ["hud","sign","openHint","listenBar"].map(id=>vis(document.getElementById(id))).forEach(r=>{if(!r)return;if((r.top+r.bottom)/2<H/2)top=Math.max(top,r.bottom+10);else bottom=Math.min(bottom,r.top-10);});
   if(G.compact&&!opts.closed){const rd=vis(document.getElementById("reader"));if(rd)bottom=Math.min(bottom,rd.top-6);}
   const ed=vis(document.getElementById("edgePrev"));if(ed){left=Math.max(left,ed.right+4);right=Math.min(right,W-(ed.right+4));}
   if(bottom-top<H*.3){top=8;bottom=H-8;}
@@ -299,8 +298,8 @@ function setView(kind){
 function set2D(on){
   const cam=G.cam,ctl=G.ctl;G.is2D=!!on;ctl.autoRotate=false;G.orbitPending=false;
   cam.fov=on?7:32;cam.near=on?.5:.02;cam.far=on?260:60;cam.updateProjectionMatrix();
-  ctl.enableRotate=!on;ctl.minPolarAngle=on?0:.05;ctl.minDistance=on?4:.9;ctl.maxDistance=on?80:5.2;
-  G.scene.fog=on?null:new THREE.Fog(G.scene.background.getHex(),5,13);
+  ctl.enableRotate=!on;ctl.minPolarAngle=on?0:.05;ctl.minDistance=on?4:.9;ctl.maxDistance=on?80:12;
+  G.scene.fog=on?null:new THREE.Fog(G.scene.background.getHex(),9,24);
   const kind=G.view==="read"?"read":document.body.classList.contains("exploring")?"figure":"top";
   if(on)flyTo(viewPreset(kind),true);else setView(G.view&&G.view!=="top"?G.view:"book");
 }
@@ -327,7 +326,7 @@ function resetView(instant){if(G.closed){flyTo(viewClosed(),instant);return;}G.v
 function setTheme(night){
   const T=THREE;document.documentElement.dataset.night=night?"1":"0";
   if(G.desk.material.map)G.desk.material.map.dispose();G.desk.material.map=woodTex(night);G.desk.material.needsUpdate=true;
-  const bg=night?0x0B111B:0xE9E5DD;G.scene.background=new T.Color(bg);G.scene.fog=G.is2D?null:new T.Fog(bg,5,13);
+  const bg=night?0x0B111B:0xE9E5DD;G.scene.background=new T.Color(bg);G.scene.fog=G.is2D?null:new T.Fog(bg,9,24);
   G.hemi.intensity=night?.22:.62;G.sun.intensity=night?.35:1.15;G.sun.color.set(night?0x9DB4E0:0xFFF3DF);G.lamp.intensity=night?2.4:0;G.r.toneMappingExposure=night?1.2:1.05;
 }
 

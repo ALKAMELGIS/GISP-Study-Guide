@@ -481,6 +481,20 @@ body.web #openHint{display:none!important}
 .vterm span{font-size:.72em;color:var(--navy);opacity:.75}
 .vterm:hover,.vterm:focus-visible{color:var(--navy);border-bottom-style:solid;background:rgba(31,78,140,.07)}
 .vterm.on{color:var(--navy);border-bottom:2px solid var(--navy)}
+
+/* phones and tablets: the book controls move to the top, under the tool bar, so they never cover the reading panel */
+/* one line at the top: book controls on one side, tools on the other */
+body.compact #hud{top:calc(10px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:max(10px,env(safe-area-inset-left,0px))!important;right:auto!important;transform:none!important;max-width:calc(100vw - 20px)}
+[dir="rtl"] body.compact #hud,body.compact[dir="rtl"] #hud{left:auto!important;right:max(10px,env(safe-area-inset-right,0px))!important}
+body.compact #topbar{max-width:calc(100vw - var(--hudW,300px) - 28px)}
+body.compact #topbar .tools{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+@media (max-width:560px){body.compact #topbar .tools{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}[dir="rtl"] body.compact #topbar .tools{-webkit-mask-image:linear-gradient(270deg,#000 85%,transparent);mask-image:linear-gradient(270deg,#000 85%,transparent)}}
+@media (max-width:560px){body.compact #hDim{display:none!important}body.compact #hud .tb,body.compact .tools .tb{min-width:30px;padding:0 5px!important}}
+body.compact #more{top:calc(var(--hudB,110px) + 6px);bottom:auto}
+body.compact #listenBar,body.compact #caption{top:calc(var(--hudB,110px) + 8px);bottom:auto}
+body.compact #toast{top:calc(var(--hudB,110px) + 10px)}
+body.compact #openHint{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+body.compact #reader{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:28px}
 </style>
 
 <div id="loader" role="status" aria-live="polite"><div class="box"><svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><path d="M24 12c-5-4-12-5-18-4v28c6-1 13 0 18 4 5-4 12-5 18-4V8c-6-1-13 0-18 4z" fill="none" stroke="#161616" stroke-width="1.6"/><path d="M24 12v28" stroke="#161616" stroke-width="1.6"/></svg><h1>GISP Library</h1><div class="bar"><i id="ldbar"></i></div><span class="label" id="ldmsg">Binding the book</span></div></div>

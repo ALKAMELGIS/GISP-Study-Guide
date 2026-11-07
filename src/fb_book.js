@@ -100,7 +100,7 @@ function initScene(){
   props();
   setTheme(document.documentElement.dataset.night==="1");
   const fit=()=>{if(G.webFig){webFigFit();return;}const w=innerWidth,h=innerHeight;r.setSize(w,h,false);r.domElement.style.width=w+"px";r.domElement.style.height=h+"px";css.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix();layoutMode();};
-  window.addEventListener("resize",()=>{fit();});fit();resetView(true);
+  let rzT=0;window.addEventListener("resize",()=>{fit();clearTimeout(rzT);rzT=setTimeout(()=>{if(!G.webOn&&!G.readMode&&(!G.view||G.view==="book"))resetView(true);},180);});fit();resetView(true);
   let last=performance.now();
   const loop=now=>{const dt=Math.min(.05,(now-last)/1000);last=now;if(G.webOn){if(G.webFig&&!document.hidden){if(G.fly){const f=G.fly,k=1-Math.pow(.015,dt);cam.position.lerp(f.p,k);ctl.target.lerp(f.t,k);f.time-=dt;if(f.time<=0)G.fly=null;}ctl.update();if(G.demo&&G.demo.tick)try{G.demo.tick(dt,now/1000);}catch(e){}fxTick(dt);if(G.demo&&!RM()){const tt=now/1000;G.demo.group.rotation.y=.025*Math.sin(tt*.5);}r.render(scene,cam);}requestAnimationFrame(loop);return;}
     if(G.fly){const f=G.fly,k=1-Math.pow(.015,dt);cam.position.lerp(f.p,k);ctl.target.lerp(f.t,k);f.time-=dt;if(f.time<=0)G.fly=null;}
@@ -240,14 +240,33 @@ function turnPage(dir,frontSpec,backSpec,mid){
 }
 
 /* ---- camera ---- */
+/* ---- responsive framing: fit a box of the book inside the screen area that no toolbar or panel covers ---- */
+function freeRect(opts={}){const W=innerWidth,H=innerHeight,vis=e=>{if(!e)return null;const s=getComputedStyle(e);if(s.display==="none"||s.visibility==="hidden")return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0?r:null;};
+  let top=8,bottom=H-8,left=10,right=W-10;
+  const tools=vis(document.querySelector("#topbar .tools"));if(tools)top=Math.max(top,tools.bottom+10);
+  const lows=["hud","sign","openHint","listenBar"].map(id=>vis(document.getElementById(id)));
+  lows.forEach(r=>{if(r)bottom=Math.min(bottom,r.top-10);});
+  if(G.compact&&!opts.closed){const rd=vis(document.getElementById("reader"));if(rd)bottom=Math.min(bottom,rd.top-6);}
+  const ed=vis(document.getElementById("edgePrev"));if(ed){left=Math.max(left,ed.right+4);right=Math.min(right,W-(ed.right+4));}
+  if(bottom-top<H*.3){top=8;bottom=H-8;}
+  return{left,top,right,bottom,W,H};}
+function fitBox(box,el,az=0){const cam=G.cam.clone();cam.aspect=G.cam.aspect;cam.updateProjectionMatrix();const fr=freeRect(box);
+  const corners=[];for(const x of box.x)for(const y of box.y)for(const z of box.z)corners.push(new THREE.Vector3(x,y,z));
+  const t=new THREE.Vector3((box.x[0]+box.x[1])/2,0,(box.z[0]+box.z[1])/2),dir=new THREE.Vector3(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el));
+  const proj=d=>{cam.position.copy(t).addScaledVector(dir,d);cam.lookAt(t);cam.updateMatrixWorld(true);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    corners.forEach(c=>{const v=c.clone().project(cam);if(v.z>1)v.x=v.y=9;const px=(v.x+1)/2*fr.W,py=(1-v.y)/2*fr.H;x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py);});return[x0,y0,x1,y1];};
+  const fits=r=>r[0]>=fr.left&&r[2]<=fr.right&&r[1]>=fr.top&&r[3]<=fr.bottom;
+  let d=1;for(let it=0;it<3;it++){let lo=.2,hi=12;for(let k=0;k<26;k++){const m=(lo+hi)/2;if(fits(proj(m)))hi=m;else lo=m;}d=hi;
+    const r=proj(d),cxp=(r[0]+r[2])/2,cyp=(r[1]+r[3])/2,ux=((fr.left+fr.right)/2-cxp),uy=((fr.top+fr.bottom)/2-cyp);
+    const vh=2*d*Math.tan(cam.fov*Math.PI/360),pxw=vh/fr.H;t.x-=ux*pxw*Math.cos(az);t.z-=(uy*pxw)/Math.max(.35,Math.sin(el))*Math.cos(az)+ux*pxw*Math.sin(az)*0;}
+  const p=t.clone().addScaledVector(dir,d);return{p:[p.x,p.y,p.z],t:[t.x,t.y,t.z]};}
 function viewFor(kind){
   const cam=G.cam,vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*cam.aspect),fx=G.demoRoot?G.demoRoot.position.x:PW/2;
   if(kind==="demo"){const w=.95,d=Math.max(1.15,(w/2)/Math.tan(Math.min(hf,vf*1.3)/2)*1.15);return{p:[fx+.05,.25+d*.72,d*.72],t:[fx,.2,0]};}
-  if(kind==="read"){const tx=G.leftObj?G.leftObj.position.x:-PW/2,d=Math.max((PW*1.08/2)/Math.tan(hf/2),(PD*1.06/2)/Math.tan(vf/2)),el=1.42;return{p:[tx,Math.sin(el)*d+PAGE_Y,Math.cos(el)*d+.02],t:[tx,PAGE_Y,.02]};}
-  /* the book fills the screen: frame just the open spread, leaving only a thin margin of desk */
-  const compact=G.compact,width=compact?1.04:2.12,depth=compact?1.36:1.42,dW=(width/2)/Math.tan(hf/2),dH=(depth/2)/Math.tan(vf/2),d=Math.max(dW,dH)*(compact?1.0:1.0);
-  /* reader's eye: ~64° above the desk, looking from the near edge of the book */
-  const el=compact?.98:1.12,cx=compact?fx:0;return{p:[cx,Math.sin(el)*d+.05,Math.cos(el)*d+.1],t:[cx,0,compact?.1:.08]};
+  if(kind==="read"){const tx=G.leftObj?G.leftObj.position.x:-PW/2;return fitBox({x:[tx-PW/2-.01,tx+PW/2+.01],y:[PAGE_Y,PAGE_Y],z:[-PD/2,PD/2]},1.42);}
+  /* the open spread fills the free screen area: nothing on screen covers the book */
+  if(G.compact)return fitBox({x:[fx-PW/2-.02,fx+PW/2+.06],y:[0,.09],z:[-PD/2-.03,PD/2+.03]},.98);
+  return fitBox({x:[-PW-.06,PW+.06],y:[0,.09],z:[-PD/2-.04,PD/2+.04]},1.12);
 }
 /* viewing-angle presets: same framing maths, different eye positions around the focus */
 function fitDist(w,h,frac){const cam=G.cam,vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*cam.aspect*(frac||1));return Math.max((w/2)/Math.tan(hf/2),(h/2)/Math.tan(vf/2));}
@@ -285,8 +304,7 @@ function set2D(on){
 }
 function flyTo(v,instant){if(instant||RM()){G.cam.position.set(...v.p);G.ctl.target.set(...v.t);G.fly=null;return;}G.fly={p:new THREE.Vector3(...v.p),t:new THREE.Vector3(...v.t),time:1.6};}
 /* ---- the book opens and closes like a real hardcover ---- */
-function viewClosed(){const cam=G.cam,vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*cam.aspect),cx=G.closedSide*(PW/2+.03),d=Math.max((1.3/2)/Math.tan(hf/2),(1.62/2)/Math.tan(vf/2))*1.06,el=1.02;
-  return{p:[cx,Math.sin(el)*d+.05,Math.cos(el)*d+.12],t:[cx,.04,.06]};}
+function viewClosed(){const x0=G.closedSide>0?-.06:-(PW+.08),x1=G.closedSide>0?PW+.08:.06;return fitBox({x:[x0,x1],y:[0,.15],z:[-PD/2-.04,PD/2+.04],closed:true},1.02);}
 function closedSideNow(){return(typeof isAR==="function"&&isAR()&&(typeof S==="undefined"||S.vol==="gisp"))?-1:1;}
 function setClosedVis(closed){if(G.spineClosed)G.spineClosed.forEach((m,i)=>m.visible=closed&&((i===0)===(G.closedSide>0)));document.body.classList.toggle("closed",closed);const v=closed?"hidden":"";if(G.leftEl)G.leftEl.style.visibility=v;if(G.rightEl)G.rightEl.style.visibility=v;
   if(G.demoRoot)G.demoRoot.visible=!closed;if(G.ribbon)G.ribbon.visible=!closed;}

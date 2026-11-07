@@ -451,7 +451,18 @@ body.web #webListen{display:inline-flex}
 #sign .soc a:hover,#sign .soc a:focus-visible{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:translateY(-2px)}
 #sign .soc svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
 body.web #sign{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-@media (max-width:900px){#sign{flex-direction:column-reverse;align-items:flex-start;gap:4px;bottom:auto;top:calc(60px + env(safe-area-inset-top,0px))}[dir="rtl"] #sign{left:auto;right:max(14px,env(safe-area-inset-right,0px));align-items:flex-end}#sign .cr span{display:none}#sign .soc a{width:30px;height:30px}#sign .cr{font-size:12.5px}}
+/* phones and tablets: the corner signature moves into the reading panel and the web page, so it never covers the book */
+body.compact #sign,body.web #sign{display:none}
+@media (max-width:1199px){#sign .cr span{display:none}}
+.sign-inline{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:28px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+[dir="rtl"] .sign-inline{align-items:flex-end}
+.sign-inline .cr{font:italic 400 13.5px/1.3 "Atkinson Hyperlegible",system-ui,sans-serif;color:var(--muted)}
+.sign-inline .cr b{font-weight:700;color:var(--text)}
+.sign-inline .soc{display:flex;gap:8px}
+.sign-inline .soc a{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line2);background:var(--bg);color:var(--ink)}
+.sign-inline .soc a:hover,.sign-inline .soc a:focus-visible{background:var(--ink);color:var(--bg)}
+.sign-inline .soc svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+#web .sign-inline{grid-column:1/-1;max-width:760px;width:100%;justify-self:center}
 [dir="rtl"] #sign .cr{direction:rtl;unicode-bidi:isolate}
 @media print{#sign{display:none}}
 

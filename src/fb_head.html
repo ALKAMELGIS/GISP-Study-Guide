@@ -443,7 +443,7 @@ body.web #webListen{display:inline-flex}
 @media (max-width:600px){.wstage{height:min(340px,48vh)}.wsteps{grid-template-columns:1fr}}
 
 /* author signature: small, bottom-right corner */
-#sign{position:fixed;z-index:19;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:6px;direction:ltr;pointer-events:none}
+#sign{position:fixed;z-index:19;left:max(14px,env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column-reverse;align-items:flex-start;gap:6px;direction:ltr;pointer-events:none}
 #sign .cr{font:italic 400 11.5px/1.2 "Atkinson Hyperlegible",system-ui,sans-serif;color:var(--muted);letter-spacing:.01em}
 #sign .cr b{font-weight:700;color:var(--text)}
 #sign .soc{display:flex;gap:6px;pointer-events:auto}
@@ -451,7 +451,7 @@ body.web #webListen{display:inline-flex}
 #sign .soc a:hover,#sign .soc a:focus-visible{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:translateY(-2px)}
 #sign .soc svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
 body.web #sign{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-@media (max-width:900px){#sign{flex-direction:row-reverse;align-items:center;gap:8px;bottom:auto;top:calc(56px + env(safe-area-inset-top,0px))}#sign .cr span{display:none}#sign .soc a{width:24px;height:24px}}
+@media (max-width:900px){#sign{flex-direction:column-reverse;align-items:flex-start;gap:4px;bottom:auto;top:calc(60px + env(safe-area-inset-top,0px))}[dir="rtl"] #sign{left:auto;right:max(14px,env(safe-area-inset-right,0px));align-items:flex-end}#sign .cr span{display:none}#sign .soc a{width:24px;height:24px}}
 [dir="rtl"] #sign .cr{direction:rtl;unicode-bidi:isolate}
 @media print{#sign{display:none}}
 </style>

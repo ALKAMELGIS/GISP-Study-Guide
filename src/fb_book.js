@@ -227,11 +227,17 @@ function leafPose(t,dir){
   P.needsUpdate=true;G.leafGeo.computeVertexNormals();G.leafGeo.computeBoundingSphere();
 }
 function resetLeafParam(){const P=G.leafGeo.attributes.position,N=40;for(let i=0;i<P.count;i++){const col=i%(N+1);P.setX(i,-PW/2+col*PW/N);}}
-function turnPage(dir,frontSpec,backSpec,mid){
+function turnPage(dir,frontSpec,backSpec,mid,drag){
   return new Promise(res=>{
     const fF=G.leafFront.material,fB=G.leafBack.material;
     if(fF.map)fF.map.dispose();if(fB.map)fB.map.dispose();
     if(dir>0){fF.map=texFrom(pageCanvas(Object.assign({side:"right"},frontSpec)));fB.map=texFrom(pageCanvas(Object.assign({side:"left"},backSpec)),true);}else{fF.map=texFrom(pageCanvas(Object.assign({side:"right"},backSpec)));fB.map=texFrom(pageCanvas(Object.assign({side:"left"},frontSpec)),true);}fF.needsUpdate=fB.needsUpdate=true;
+    if(drag){/* hand-driven turn: the leaf follows the pointer, then settles forward or falls back */
+      G.leafFront.visible=G.leafBack.visible=true;const o={t:0};const pose=t=>{o.t=Math.max(0,Math.min(1,t));resetLeafParam();leafPose(o.t,dir);};
+      drag.set=pose;pose(drag.t||0);
+      drag.release=(complete)=>{drag.set=null;if(complete)sfx("flip");const to=complete?1:0,dur=Math.max(.18,Math.abs(to-o.t)*(complete?.7:.55));
+        gsap.to(o,{t:to,duration:dur,ease:complete?"power2.out":"power2.inOut",onUpdate:()=>{resetLeafParam();leafPose(o.t,dir);},onComplete:()=>{G.leafFront.visible=G.leafBack.visible=false;if(complete)mid&&mid();res(complete);}});};
+      if(drag.pending!=null)drag.release(drag.pending);return;}
     sfx("flip");
     if(RM()){mid&&mid();res();return;}
     G.leafFront.visible=G.leafBack.visible=true;let called=false;const o={t:0};

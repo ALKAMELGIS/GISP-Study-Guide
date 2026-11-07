@@ -1066,11 +1066,17 @@ function leafPose(t,dir){
   P.needsUpdate=true;G.leafGeo.computeVertexNormals();G.leafGeo.computeBoundingSphere();
 }
 function resetLeafParam(){const P=G.leafGeo.attributes.position,N=40;for(let i=0;i<P.count;i++){const col=i%(N+1);P.setX(i,-PW/2+col*PW/N);}}
-function turnPage(dir,frontSpec,backSpec,mid){
+function turnPage(dir,frontSpec,backSpec,mid,drag){
   return new Promise(res=>{
     const fF=G.leafFront.material,fB=G.leafBack.material;
     if(fF.map)fF.map.dispose();if(fB.map)fB.map.dispose();
     if(dir>0){fF.map=texFrom(pageCanvas(Object.assign({side:"right"},frontSpec)));fB.map=texFrom(pageCanvas(Object.assign({side:"left"},backSpec)),true);}else{fF.map=texFrom(pageCanvas(Object.assign({side:"right"},backSpec)));fB.map=texFrom(pageCanvas(Object.assign({side:"left"},frontSpec)),true);}fF.needsUpdate=fB.needsUpdate=true;
+    if(drag){/* hand-driven turn: the leaf follows the pointer, then settles forward or falls back */
+      G.leafFront.visible=G.leafBack.visible=true;const o={t:0};const pose=t=>{o.t=Math.max(0,Math.min(1,t));resetLeafParam();leafPose(o.t,dir);};
+      drag.set=pose;pose(drag.t||0);
+      drag.release=(complete)=>{drag.set=null;if(complete)sfx("flip");const to=complete?1:0,dur=Math.max(.18,Math.abs(to-o.t)*(complete?.7:.55));
+        gsap.to(o,{t:to,duration:dur,ease:complete?"power2.out":"power2.inOut",onUpdate:()=>{resetLeafParam();leafPose(o.t,dir);},onComplete:()=>{G.leafFront.visible=G.leafBack.visible=false;if(complete)mid&&mid();res(complete);}});};
+      if(drag.pending!=null)drag.release(drag.pending);return;}
     sfx("flip");
     if(RM()){mid&&mid();res();return;}
     G.leafFront.visible=G.leafBack.visible=true;let called=false;const o={t:0};
@@ -1620,18 +1626,24 @@ const FIGMAP={crs:{p:[0,3,3],v:[1,1,0,3,2]},proj:{p:[0,1,2],v:[2,3,1,2]},datum:{
   arch:{p:[0,1,2],v:[0,1,2,2]},pm:{p:[0,1,2],v:[0,0,null,null]}};
 function syncFigure(){if(S.vol!=="gisp"||!G.demo)return;const s=curSpread();if(G.figSyncAt!==s){const c=$("#caption");if(c&&!(typeof W!=="undefined"&&W.on))c.hidden=true;}if(s<1||G.figSyncAt===s)return;G.figSyncAt=s;const{L,part}=lessonAt(s),m=FIGMAP[L.id];if(!m)return;const k=Math.min(m.p[part],L.steps.length-1);
   if(G.demo.step!==k)setDemoStep(k);}
-async function go(n,instant){if(G.closed&&!G.webOn){await openBook();return;}if(!G.webOn&&n<0&&curSpread()===0){stopWatch();if(LS.on)stopListen();await closeBook();return;}if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
+async function go(n,instant,drag){if(G.closed&&!G.webOn){await openBook();return;}if(!G.webOn&&n<0&&curSpread()===0){stopWatch();if(LS.on)stopListen();await closeBook();return;}if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
   const cnt=spreadCount(),from=curSpread();n=Math.max(0,Math.min(cnt-1,n));if(n===from||busy)return;busy=true;stopWatch();if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();}
   const dir=n>from?1:-1,gisp=S.vol==="gisp";
   const sameDemo=gisp&&n>0&&from>0&&lessonAt(n).L===lessonAt(from).L;
   pageEls().forEach(e=>e.style.opacity=0);
   if(!sameDemo)await sinkDemo();
+  /* the same figure stays for the next page: fold it down while the leaf passes over it, then stand it back up */
+  const fold=sameDemo&&!instant&&!RM()&&G.demo?G.demo.group:null;if(fold){gsap.killTweensOf(fold.scale);gsap.to(fold.scale,{x:.001,y:.001,z:.001,duration:.22,ease:"power2.in"});}
+  const unfold=()=>{if(fold){gsap.killTweensOf(fold.scale);gsap.to(fold.scale,{x:1,y:1,z:1,duration:.5,ease:"back.out(1.6)"});}};
   if(instant||Math.abs(n-from)>1&&RM()){S.spread[S.vol]=n;save();renderSpread({reDemo:!sameDemo});pageEls().forEach(e=>e.style.opacity=1);busy=false;return;}
   const vd=(isAR()&&gisp)?-dir:dir,lift=vd>0?"right":"left",opp=vd>0?"left":"right";
   const front=pageSpec(from,lift),back=pageSpec(n,opp);
   setPageTex(lift,pageSpec(n,lift));setPageTex(opp,pageSpec(from,opp));
   if(gisp&&!sameDemo)clearDemo();
-  await turnPage(vd,front,back,()=>{});
+  const done=await turnPage(vd,front,back,()=>{},drag&&!RM()?drag:null);
+  unfold();
+  if(done===false){/* the reader let go early: the page falls back, nothing changes */
+    setPageTex(lift,pageSpec(from,lift));setPageTex(opp,pageSpec(from,opp));renderSpread({reDemo:!sameDemo});pageEls().forEach(e=>e.style.opacity=1);busy=false;return;}
   S.spread[S.vol]=n;save();renderSpread({noDemo:sameDemo,reDemo:!sameDemo});
   pageEls().forEach(e=>{e.style.transition="opacity .35s";e.style.opacity=1;});
   busy=false;
@@ -2077,17 +2089,30 @@ function wire(){
   let hd=null;const ptrs=new Map();let pinch=null;
   const turnBy=dx=>{if(G.closed){openBook();return;}go(curSpread()+fwdFor(dx<0?"right":"left"));};
   const endHold=()=>{hd=null;G.ctl.enabled=true;};
+  /* how far the pointer has carried the page: 0 = still on its side, 1 = laid on the other side */
+  const pageSpanPx=()=>{const a=new THREE.Vector3(PW,PAGE_Y,0).project(G.cam),b=new THREE.Vector3(-PW,PAGE_Y,0).project(G.cam);return Math.max(120,Math.abs(a.x-b.x)/2*innerWidth);};
+  const startTurn=(side)=>{if(busy||G.closed||G.webOn)return false;const n=curSpread()+fwdFor(side);if(n<0||n>=spreadCount())return false;
+    hd.drag={t:0,side,sx:hd.lx,span:pageSpanPx()};go(n,false,hd.drag);return true;};
+  const holdMove=(x,y)=>{if(!hd)return;const dx=x-hd.x,dy=y-hd.y;
+    if(hd.mode==="pan"){panBy(x-hd.lx,y-hd.ly);}
+    else if(hd.mode==="turn"){
+      if(!hd.drag&&!hd.noDrag&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){const side=hd.side||(dx<0?"right":"left");if(hd.side&&((side==="right")!==(dx<0))){hd.noDrag=true;}else if(!startTurn(side))hd.noDrag=true;}
+      if(hd.drag){const d=hd.drag,t=(d.side==="right"?(d.sx-x):(x-d.sx))/(d.span*1.6);d.t=Math.max(0,Math.min(1,t));d.v=(x-hd.lx);if(d.set)d.set(d.t);}}
+    hd.lx=x;hd.ly=y;};
   cv.addEventListener("pointerdown",e=>{if(G.webOn||G.is2D)return;ptrs.set(e.pointerId,[e.clientX,e.clientY]);
-    if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])};hd=null;G.ctl.enabled=false;e.stopImmediatePropagation();return;}
-    const h=bookHit(e);if(h==="book"||h==="edge"){G.ctl.enabled=false;hd={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,mode:(h==="edge"||G.compact||G.closed)?"turn":"pan"};cv.style.cursor="grabbing";}},{capture:true});
+    if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])};if(hd&&hd.drag){hd.drag.pending=false;if(hd.drag.release)hd.drag.release(false);}hd=null;G.ctl.enabled=false;e.stopImmediatePropagation();return;}
+    const h=bookHit(e);if(h==="book"||h==="edge"){G.ctl.enabled=false;hd={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,mode:(h==="edge"||G.compact||G.closed)?"turn":"pan",side:h==="edge"?edgeAt(e):null};cv.style.cursor="grabbing";}},{capture:true});
   cv.addEventListener("pointermove",e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,[e.clientX,e.clientY]);
     if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(d>0&&pinch.d>0)zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,pinch.d/d);pinch.d=d;return;}
-    if(hd){if(hd.mode==="pan"){panBy(e.clientX-hd.lx,e.clientY-hd.ly);}hd.lx=e.clientX;hd.ly=e.clientY;return;}
-    if(e.buttons)return;const h=G.webOn?null:bookHit(e);cv.style.cursor=h==="figure"?"pointer":h==="edge"?(edgeAt(e)==="right"?"e-resize":"w-resize"):h==="book"?(G.closed?"pointer":G.compact?"grab":"grab"):"";},{capture:true});
-  const up=e=>{ptrs.delete(e.pointerId);if(pinch){if(ptrs.size<2){pinch=null;G.ctl.enabled=true;}return;}if(!hd)return;const dx=e.clientX-hd.x,dy=e.clientY-hd.y,m=hd.mode;endHold();cv.style.cursor="grab";
-    if(m==="turn"&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2&&!busy){G.dragTurnAt=performance.now();turnBy(dx);}
+    if(hd||e.buttons)return;const h=G.webOn?null:bookHit(e);cv.style.cursor=h==="figure"?"pointer":h==="edge"?(edgeAt(e)==="right"?"e-resize":"w-resize"):h==="book"?(G.closed?"pointer":"grab"):"";},{capture:true});
+  addEventListener("pointermove",e=>{if(hd)holdMove(e.clientX,e.clientY);});
+  const up=e=>{ptrs.delete(e.pointerId);if(pinch){if(ptrs.size<2){pinch=null;G.ctl.enabled=true;}return;}if(!hd)return;const dx=e.clientX-hd.x,dy=e.clientY-hd.y,m=hd.mode,drag=hd.drag;endHold();cv.style.cursor="grab";
+    if(drag){/* let go: past a third of the way, or flicked forward, the page completes; otherwise it falls back */
+      const fwdFlick=(drag.side==="right"?-drag.v:drag.v)>14,complete=drag.t>.33||fwdFlick&&drag.t>.08;G.dragTurnAt=performance.now();
+      if(drag.release)drag.release(complete);else drag.pending=complete;return;}
+    if(m==="turn"&&G.closed&&Math.abs(dx)>40){G.dragTurnAt=performance.now();openBook();return;}
     if(m==="pan"&&Math.hypot(dx,dy)>6)G.dragTurnAt=performance.now();};
-  addEventListener("pointerup",up);addEventListener("pointercancel",e=>{ptrs.delete(e.pointerId);pinch=null;endHold();});
+  addEventListener("pointerup",up);addEventListener("pointercancel",e=>{ptrs.delete(e.pointerId);pinch=null;if(hd&&hd.drag){if(hd.drag.release)hd.drag.release(false);else hd.drag.pending=false;}endHold();});
   /* wheel / trackpad pinch: zoom toward the pointer (horizontal swipe or Shift+wheel still turns pages, handled below) */
   cv.addEventListener("wheel",e=>{if(G.webOn||e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();e.stopImmediatePropagation();
     const dy=e.deltaMode===1?e.deltaY*16:e.deltaY;zoomAt(e.clientX,e.clientY,Math.exp(Math.max(-60,Math.min(60,dy))*(e.ctrlKey?.012:.0016)));},{capture:true,passive:false});
@@ -2095,7 +2120,7 @@ function wire(){
   cv.addEventListener("dblclick",e=>{if(G.webOn||G.closed)return;const fit=viewFor("book"),fd=Math.hypot(fit.p[0]-fit.t[0],fit.p[1]-fit.t[1],fit.p[2]-fit.t[2]);if(camDist()<fd*.8){resetView();}else zoomAt(e.clientX,e.clientY,.55);});
   /* the HTML text page: its outer edge turns the page; the text itself stays selectable */
   [G.leftEl,G.rightEl].forEach(el=>{el.addEventListener("pointermove",e=>{if(hd||e.buttons)return;const h=edgeAt(e);el.style.cursor=h&&!e.target.closest("button,a,input,textarea")?(h==="right"?"e-resize":"w-resize"):"";});
-    el.addEventListener("pointerdown",e=>{if(e.target.closest("button,a,input,textarea,.opt,.vterm"))return;if(edgeAt(e)){hd={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,mode:"turn"};e.preventDefault();}});
+    el.addEventListener("pointerdown",e=>{if(e.target.closest("button,a,input,textarea,.opt,.vterm"))return;const sd=edgeAt(e);if(sd){hd={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,mode:"turn",side:sd};e.preventDefault();}});
     el.addEventListener("wheel",e=>{if(G.webOn||e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();zoomAt(e.clientX,e.clientY,Math.exp(Math.max(-60,Math.min(60,e.deltaY))*(e.ctrlKey?.012:.0016)));},{passive:false});});
   G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;if(G.closed){openBook();return;}const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
   $("#edgePrev").onclick=()=>go(curSpread()+fwdFor("left"));$("#edgeNext").onclick=()=>go(curSpread()+fwdFor("right"));

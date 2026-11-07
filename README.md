@@ -2,7 +2,9 @@
 
 An interactive study book for the **GISCI Geospatial Core Technical Knowledge Exam (GISP)**. It looks like a real hardcover book on a desk: it starts closed under a blue cloth cover with a gold title, and you click the cover to open it. Going back from the first page closes it again. The left page holds the lesson. The right page holds a pop-up 3D figure that explains the concept step by step.
 
-![The 3D study book](media/screenshot-book.jpg)
+| Closed: click the cover to open | Open: lesson on the left, live 3D figure on the right |
+|---|---|
+| ![The closed book with its blue cover](media/screenshot-cover.jpg) | ![The open book](media/screenshot-book.jpg) |
 
 ## What's inside
 
@@ -19,7 +21,7 @@ An interactive study book for the **GISCI Geospatial Core Technical Knowledge Ex
 | **Your own documents** | Add a PDF or text file and read it as a book in the same reader |
 | **2D / 3D** | Switch between the 3D perspective view and a flat 2D plan view |
 
-| Pop-up figure | Predict, then reveal | Arabic edition |
+| Mercator on the knowledge-check page | Predict, then reveal | Arabic edition |
 |---|---|---|
 | ![](media/screenshot-figure.jpg) | ![](media/screenshot-predict.jpg) | ![](media/screenshot-arabic.jpg) |
 

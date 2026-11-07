@@ -9,7 +9,7 @@ An interactive study book for the **GISCI Geospatial Core Technical Knowledge Ex
 | | |
 |---|---|
 | **14 illustrated lessons** | Arranged by the official GISCI exam blueprint: coordinates, projections, datums, topology, data quality, cartography, GNSS, remote sensing, raster analysis, overlay, spatial statistics, geodatabases, web GIS architecture, and project management |
-| **Pop-up 3D figures** | One per lesson, built with three.js. Step through them, play them as a demo, and drag to rotate |
+| **Pop-up 3D figures** | One per lesson, built with three.js. Step through them, play them as a demo, and drag to rotate. The globe figures show a real, rotating Earth inside the graticule, and the map-projection figure unwraps the real Earth onto a cylinder, Mercator and other projections |
 | **Learning loop** | Predict, then lift the flap, then answer a knowledge check to earn the lesson stamp |
 | **Read aloud** | Speech synthesis with live highlighting of the line being read. Turns pages automatically, with adjustable speed |
 | **Web view** | One icon switches the book into a scrolling web page with the same lessons and live 3D figures. The same icon switches back |
@@ -46,6 +46,7 @@ The source files are in `src/`:
 | File | Contents |
 |---|---|
 | `fb_head.html` | Page markup and styles |
+| `fb_earth.js` | Earth imagery (NASA Blue Marble, public domain) embedded as data |
 | `data.json` | Blueprint areas, terms, numbers and practice questions |
 | `fb_lessons.js` | The 14 lessons (concepts, formulas, vocabulary, predictions, checks, figure steps) |
 | `fb_ar.js` | Arabic translations |
@@ -61,6 +62,10 @@ python3 src/build.py
 ## Printable quick guide
 
 `study-guide/` contains a short printable summary of the exam: `GISP_Exam_Quick_Study_Guide.docx` and `.pdf`. The scripts that generate them are in `study-guide/source/`.
+
+## Credits
+
+Earth imagery: NASA Visible Earth *Blue Marble* (public domain), taken from the examples of the [three-globe](https://github.com/vasturiano/three-globe) package.
 
 ## Disclaimer
 

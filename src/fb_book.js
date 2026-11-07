@@ -351,14 +351,31 @@ function flowParticles(curve,n,color,speed=.25){const T=THREE,pos=new Float32Arr
   const p=new T.Points(g,new T.PointsMaterial({color,size:.022,transparent:true,opacity:.95,blending:T.AdditiveBlending,depthWrite:false}));p.frustumCulled=false;
   const off=[...Array(n)].map((_,i)=>i/n);p.userData.tick=(dt)=>{for(let i=0;i<n;i++){off[i]=(off[i]+dt*speed)%1;const q=curve.getPoint(off[i]);pos.set([q.x,q.y,q.z],i*3);}g.attributes.position.needsUpdate=true;};return p;}
 function lineOf(pts,color,op=1,w){const g=new THREE.BufferGeometry().setFromPoints(pts);return new THREE.Line(g,new THREE.LineBasicMaterial({color,transparent:op<1,opacity:op}));}
+/* ---- a real Earth: Blue Marble imagery, relief shading and a soft atmosphere ---- */
+function earthTex(){if(G.earthTex)return G.earthTex;const L=new THREE.TextureLoader(),m=L.load(EARTH_IMG),bm=L.load(EARTH_BUMP);m.encoding=THREE.sRGBEncoding;m.anisotropy=8;bm.anisotropy=4;G.earthTex={m,bm};return G.earthTex;}
+function earthImg(cb){if(G.earthImgEl){if(G.earthImgEl.complete)cb(G.earthImgEl);else G.earthImgEl.addEventListener("load",()=>cb(G.earthImgEl));return;}const im=new Image();im.onload=()=>cb(im);im.src=EARTH_IMG;G.earthImgEl=im;}
+function earth(R,o={}){const T=THREE,g=new T.Group(),tx=earthTex();
+  const globe=new T.Mesh(new T.SphereGeometry(R,96,64),new T.MeshStandardMaterial({map:tx.m,bumpMap:tx.bm,bumpScale:R*.012,roughness:.62,metalness:0,color:new T.Color(1.22,1.22,1.25)}));
+  globe.rotation.y=-Math.PI/2;globe.castShadow=true;g.add(globe);
+  /* atmosphere: a back-facing shell that glows at the limb */
+  const atm=new T.Mesh(new T.SphereGeometry(R*(o.halo||1.13),64,32),new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.BackSide,
+    uniforms:{c:{value:new T.Color(0x5AA2F0)},p:{value:o.glow||1.0}},
+    vertexShader:"varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}",
+    fragmentShader:"uniform vec3 c;uniform float p;varying vec3 vN;varying vec3 vV;void main(){float f=pow(clamp(-dot(vN,vV),0.,1.),1.6)*p;gl_FragColor=vec4(c,clamp(f*.95,0.,.6));}"}));
+  g.add(atm);
+  /* thin bright rim on the day side for a photographic look */
+  const rim=new T.Mesh(new T.SphereGeometry(R*1.004,64,32),new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,
+    vertexShader:"varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}",
+    fragmentShader:"varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.-max(dot(vN,vV),0.),3.)*.28;gl_FragColor=vec4(vec3(.55,.78,1.)*f,f);}"}));
+  g.add(rim);g.userData.globe=globe;return g;}
 const LL=(la,lo,r)=>{const D=Math.PI/180;return new THREE.Vector3(r*Math.cos(la*D)*Math.sin(lo*D),r*Math.sin(la*D),r*Math.cos(la*D)*Math.cos(lo*D));};
 
 const DEMOS={};
 /* globe & CRS */
 DEMOS.globe=()=>{const T=THREE,g=new T.Group(),R=.27;g.add(stand(.36));
   const gl=new T.Group();gl.position.y=.4;g.add(gl);
-  gl.add(new T.Mesh(new T.SphereGeometry(R,64,32),mat(0xEFE8D8,{roughness:.95})));
-  const gr=grat(R*1.004,15,INK.navy,.45);gl.add(gr);
+  gl.add(earth(R));
+  const cage=new T.Group();cage.position.y=.4;g.add(cage);const gr=grat(R*1.045,15,INK.navy,.55);cage.add(gr);
   const eq=new T.Mesh(new T.TorusGeometry(R*1.01,.0035,8,128),mat(INK.gold,{metalness:.5,roughness:.35}));eq.rotation.x=Math.PI/2;gl.add(eq);
   const pm=new T.Mesh(new T.TorusGeometry(R*1.01,.0035,8,128,Math.PI),mat(INK.gold,{metalness:.5,roughness:.35}));pm.rotation.z=Math.PI/2;pm.rotation.y=-Math.PI/2;gl.add(pm);
   const o1=hidden(new T.Group());o1.add(eq.clone(),pm.clone());[["Equator 0°",new T.Vector3(R*1.05,0,.06)],["Prime meridian 0°",new T.Vector3(0,R*.62,R*.92)]].forEach(([t,p])=>{const s=inkLabel(t,{color:"#7A5E1F",h:.042});s.position.copy(p);o1.add(s);});gl.add(o1);
@@ -370,19 +387,23 @@ DEMOS.globe=()=>{const T=THREE,g=new T.Group(),R=.27;g.add(stand(.36));
   const zl=inkLabel("UTM zone 40 · 54°–60°E · metres",{color:"#0E6B4F",h:.042});zl.position.copy(LL(-10,57,R*1.45));zg.add(zl);gl.add(hidden(zg));
   let spin=true,targetY=null;
   return{group:g,steps:[()=>{spin=true;fade(o1,0);fade(pt,0);fade(zg,0);},()=>{spin=true;fade(o1,1);fade(pt,0);fade(zg,0);},()=>{spin=false;targetY=-55.3*D;fade(o1,.5);fade(pt,1);fade(zg,0);},()=>{spin=false;targetY=-57*D;fade(o1,.3);fade(pt,1);fade(zg,1);}],
-    tick(dt){if(spin&&!RM())gl.rotation.y+=dt*.25;else if(targetY!=null){let d=targetY-gl.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));gl.rotation.y+=d*Math.min(1,dt*3);}}};};
+    tick(dt){if(!RM())cage.rotation.y-=dt*.04;if(spin&&!RM())gl.rotation.y+=dt*.25;else if(targetY!=null){let d=targetY-gl.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));gl.rotation.y+=d*Math.min(1,dt*3);}}};};
 /* hero (front matter) */
 DEMOS.hero=()=>{const T=THREE,g=new T.Group(),R=.24;g.add(stand(.38));const gl=new T.Group();gl.position.y=.42;g.add(gl);
-  gl.add(new T.Mesh(new T.SphereGeometry(R,64,32),mat(0xEFE8D8,{roughness:.95})));gl.add(grat(R*1.004,15,INK.navy,.45));
+  gl.add(earth(R));const cage=new T.Group();cage.position.y=.42;g.add(cage);cage.add(grat(R*1.05,15,INK.navy,.55));
   const sats=[];[[.36,.4,INK.gold],[.42,-.6,INK.teal],[.48,1.1,INK.navy]].forEach(([r,tilt,c],i)=>{const o=new T.Group();o.rotation.x=tilt;o.rotation.z=i*.7;o.position.y=.42;g.add(o);const ring=new T.Mesh(new T.TorusGeometry(r,.0018,6,120),new T.MeshBasicMaterial({color:c,transparent:true,opacity:.5}));ring.rotation.x=Math.PI/2;o.add(ring);const s=new T.Mesh(new T.OctahedronGeometry(.018),mat(c,{metalness:.4,roughness:.3}));o.add(s);sats.push([s,r,.5+i*.2]);});
-  return{group:g,steps:[()=>{}],tick(dt,t){if(!RM())gl.rotation.y+=dt*.2;sats.forEach(([s,r,sp],i)=>{const a=t*sp+i*2;s.position.set(Math.cos(a)*r,0,Math.sin(a)*r);});}};};
+  return{group:g,steps:[()=>{}],tick(dt,t){if(!RM()){gl.rotation.y+=dt*.2;cage.rotation.y-=dt*.035;}sats.forEach(([s,r,sp],i)=>{const a=t*sp+i*2;s.position.set(Math.cos(a)*r,0,Math.sin(a)*r);});}};};
 /* projections */
 DEMOS.proj=()=>{const T=THREE,g=new T.Group(),NL=72,NB=36,D=Math.PI/180,la0=-80*D,la1=80*D;
   const cv=mkCanvas(1024,512),c=cv.getContext("2d");c.fillStyle="#F3EEE2";c.fillRect(0,0,1024,512);const X=lo=>(lo+180)/360*1024,Y=la=>(80-la)/160*512;
   c.lineWidth=1.5;for(let lo=-180;lo<=180;lo+=15){c.strokeStyle=lo===0?"#9C7A2E":"rgba(16,35,63,.35)";c.beginPath();c.moveTo(X(lo),0);c.lineTo(X(lo),512);c.stroke();}
   for(let la=-75;la<=75;la+=15){c.strokeStyle=la===0?"#9C7A2E":"rgba(16,35,63,.35)";c.beginPath();c.moveTo(0,Y(la));c.lineTo(1024,Y(la));c.stroke();}
   for(let la=-60;la<=60;la+=30)for(let lo=-150;lo<=150;lo+=30){c.beginPath();c.ellipse(X(lo),Y(la),7/Math.cos(la*D)*1024/360,7*512/160,0,0,7);c.fillStyle="rgba(176,141,60,.45)";c.fill();c.strokeStyle="#7A5E1F";c.stroke();}
-  const tex=new T.CanvasTexture(cv);tex.encoding=T.sRGBEncoding;
+  const tex=new T.CanvasTexture(cv);tex.encoding=T.sRGBEncoding;tex.anisotropy=8;
+  const overlay=()=>{c.lineWidth=1.6;for(let lo=-180;lo<=180;lo+=15){c.strokeStyle=lo===0?"rgba(246,226,162,.95)":"rgba(255,255,255,.42)";c.beginPath();c.moveTo(X(lo),0);c.lineTo(X(lo),512);c.stroke();}
+    for(let la=-75;la<=75;la+=15){c.strokeStyle=la===0?"rgba(246,226,162,.95)":"rgba(255,255,255,.42)";c.beginPath();c.moveTo(0,Y(la));c.lineTo(1024,Y(la));c.stroke();}
+    for(let la=-60;la<=60;la+=30)for(let lo=-150;lo<=150;lo+=30){c.beginPath();c.ellipse(X(lo),Y(la),7/Math.cos(la*D)*1024/360,7*512/160,0,0,7);c.fillStyle="rgba(246,200,90,.32)";c.fill();c.strokeStyle="rgba(255,236,170,.85)";c.lineWidth=1.2;c.stroke();}};
+  earthImg(im=>{c.drawImage(im,0,im.height*10/180,im.width,im.height*160/180,0,0,1024,512);overlay();tex.needsUpdate=true;});
   const pos=[],uv=[],idx=[],ll=[];for(let j=0;j<=NB;j++)for(let i=0;i<=NL;i++){ll.push([-Math.PI+2*Math.PI*i/NL,la0+(la1-la0)*j/NB]);uv.push(i/NL,j/NB);pos.push(0,0,0);}
   for(let j=0;j<NB;j++)for(let i=0;i<NL;i++){const a=j*(NL+1)+i,b=a+1,c2=a+NL+1,d=c2+1;idx.push(a,b,d,a,d,c2);}
   const geo=new T.BufferGeometry();geo.setAttribute("position",new T.Float32BufferAttribute(pos,3));geo.setAttribute("uv",new T.Float32BufferAttribute(uv,2));geo.setIndex(idx);
@@ -463,7 +484,7 @@ DEMOS.terrain=()=>{const T=THREE,g=new T.Group(),S=.8,N=80,HS=.26;let mx=0;for(l
     tick(dt){const k=1-Math.pow(.004,dt);for(let i=0;i<C.length;i++)C[i]+=(tC[i]-C[i])*k;geo.attributes.color.needsUpdate=true;for(let i=0;i<M1.length;i++)M1[i]+=(t1[i]-M1[i])*k;for(let i=0;i<M2.length;i++)M2[i]+=(t2[i]-M2[i])*k;cl.geometry.attributes.position.needsUpdate=true;ci.geometry.attributes.position.needsUpdate=true;}};};
 /* GNSS */
 DEMOS.gnss=()=>{const T=THREE,g=new T.Group(),R=.16;g.add(stand(.2));const w=new T.Group();w.position.y=.25;g.add(w);
-  w.add(new T.Mesh(new T.SphereGeometry(R,48,24),mat(0xE7E1D2)));w.add(grat(R*1.005,20,INK.navy,.35));
+  w.add(earth(R,{glow:.8}));w.add(grat(R*1.03,20,INK.navy,.45));
   const rec=LL(25,55,R),up=rec.clone().normalize();const rm=new T.Mesh(new T.SphereGeometry(.01,12,8),mat(INK.red));rm.position.copy(rec);w.add(rm);
   const DIST=.3,east=new T.Vector3(0,1,0).cross(up).normalize(),north=up.clone().cross(east);const dirOf=(az,el)=>{const a=az*Math.PI/180,e=el*Math.PI/180;return up.clone().multiplyScalar(Math.sin(e)).add(north.clone().multiplyScalar(Math.cos(a)*Math.cos(e))).add(east.clone().multiplyScalar(Math.sin(a)*Math.cos(e)));};
   const cfg=[[300,40],[60,45],[180,55],[110,82]],cols=[INK.navy,INK.teal,INK.gold,INK.emerald];

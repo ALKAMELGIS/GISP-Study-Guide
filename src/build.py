@@ -14,7 +14,7 @@ SKELETON_HEAD = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
 def read(name):
     return (HERE / name).read_text(encoding="utf-8")
 
-js = ("const DATA=" + read("data.json") + ";\n" + read("fb_lessons.js") + "\n" + read("fb_ar.js")
+js = ("const DATA=" + read("data.json") + ";\n" + read("fb_earth.js") + "\n" + read("fb_lessons.js") + "\n" + read("fb_ar.js")
       + "\n" + read("fb_book.js") + "\n" + read("fb_app.js"))
 page = SKELETON_HEAD + read("fb_head.html") + "\n<script>\n" + js + "\n</script>\n</body></html>\n"
 (ROOT / "index.html").write_text(page, encoding="utf-8")

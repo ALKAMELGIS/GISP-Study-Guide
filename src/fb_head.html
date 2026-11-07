@@ -454,6 +454,16 @@ body.web #sign{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 @media (max-width:900px){#sign{flex-direction:column-reverse;align-items:flex-start;gap:4px;bottom:auto;top:calc(60px + env(safe-area-inset-top,0px))}[dir="rtl"] #sign{left:auto;right:max(14px,env(safe-area-inset-right,0px));align-items:flex-end}#sign .cr span{display:none}#sign .soc a{width:24px;height:24px}}
 [dir="rtl"] #sign .cr{direction:rtl;unicode-bidi:isolate}
 @media print{#sign{display:none}}
+
+/* closed book */
+#openHint{position:fixed;z-index:18;left:50%;bottom:calc(74px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:11px 18px;border-radius:999px;border:1px solid var(--line2);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);color:var(--ink);font-weight:700;font-size:14.5px;box-shadow:var(--shadow)}
+#openHint .dot{width:9px;height:9px;border-radius:50%;background:#C9A045;box-shadow:0 0 0 0 rgba(201,160,69,.6);animation:oh 1.8s ease-out infinite}
+@keyframes oh{0%{box-shadow:0 0 0 0 rgba(201,160,69,.55)}100%{box-shadow:0 0 0 14px rgba(201,160,69,0)}}
+@media (prefers-reduced-motion:reduce){#openHint .dot{animation:none}}
+body.closed #openHint{display:inline-flex}
+body.closed #reader,body.closed #caption,body.closed .edge{display:none!important}
+body.closed #scene canvas{cursor:pointer}
+body.web #openHint{display:none!important}
 </style>
 
 <div id="loader" role="status" aria-live="polite"><div class="box"><svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><path d="M24 12c-5-4-12-5-18-4v28c6-1 13 0 18 4 5-4 12-5 18-4V8c-6-1-13 0-18 4z" fill="none" stroke="#161616" stroke-width="1.6"/><path d="M24 12v28" stroke="#161616" stroke-width="1.6"/></svg><h1>GISP Library</h1><div class="bar"><i id="ldbar"></i></div><span class="label" id="ldmsg">Binding the book</span></div></div>
@@ -514,6 +524,7 @@ body.web #sign{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
     <a href="https://www.linkedin.com/in/alkamelgis/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn"><svg viewBox="0 0 24 24"><path d="M4.5 9h3v10.5h-3zM6 3.7a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5zM10 9h2.9v1.4c.4-.8 1.4-1.7 3-1.7 3.1 0 3.6 2 3.6 4.7v6.1h-3v-5.4c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8v5.5H10z" fill="currentColor" stroke="none"/></svg></a>
   </nav>
 </footer>
+<button id="openHint" aria-label="Open the book"><span class="dot" aria-hidden="true"></span><span>Click the cover to open the book</span></button>
 <div id="reader" hidden><div class="grab"><b id="rdTitle"></b><button class="btn sm" id="rdToggle" aria-expanded="true">Hide text</button></div><div id="rdHost"></div></div>
 <div id="seltb" class="glass" hidden role="toolbar" aria-label="Selection tools"></div>
 <div id="drawer" class="glass" hidden role="dialog" aria-modal="false"><header><h2 id="dwT"></h2><button class="tb" id="dwX" aria-label="Close panel"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header><div class="body" id="dwB"></div></div>

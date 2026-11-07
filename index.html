@@ -454,6 +454,16 @@ body.web #sign{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 @media (max-width:900px){#sign{flex-direction:column-reverse;align-items:flex-start;gap:4px;bottom:auto;top:calc(60px + env(safe-area-inset-top,0px))}[dir="rtl"] #sign{left:auto;right:max(14px,env(safe-area-inset-right,0px));align-items:flex-end}#sign .cr span{display:none}#sign .soc a{width:24px;height:24px}}
 [dir="rtl"] #sign .cr{direction:rtl;unicode-bidi:isolate}
 @media print{#sign{display:none}}
+
+/* closed book */
+#openHint{position:fixed;z-index:18;left:50%;bottom:calc(74px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:11px 18px;border-radius:999px;border:1px solid var(--line2);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);color:var(--ink);font-weight:700;font-size:14.5px;box-shadow:var(--shadow)}
+#openHint .dot{width:9px;height:9px;border-radius:50%;background:#C9A045;box-shadow:0 0 0 0 rgba(201,160,69,.6);animation:oh 1.8s ease-out infinite}
+@keyframes oh{0%{box-shadow:0 0 0 0 rgba(201,160,69,.55)}100%{box-shadow:0 0 0 14px rgba(201,160,69,0)}}
+@media (prefers-reduced-motion:reduce){#openHint .dot{animation:none}}
+body.closed #openHint{display:inline-flex}
+body.closed #reader,body.closed #caption,body.closed .edge{display:none!important}
+body.closed #scene canvas{cursor:pointer}
+body.web #openHint{display:none!important}
 </style>
 
 <div id="loader" role="status" aria-live="polite"><div class="box"><svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><path d="M24 12c-5-4-12-5-18-4v28c6-1 13 0 18 4 5-4 12-5 18-4V8c-6-1-13 0-18 4z" fill="none" stroke="#161616" stroke-width="1.6"/><path d="M24 12v28" stroke="#161616" stroke-width="1.6"/></svg><h1>GISP Library</h1><div class="bar"><i id="ldbar"></i></div><span class="label" id="ldmsg">Binding the book</span></div></div>
@@ -514,6 +524,7 @@ body.web #sign{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
     <a href="https://www.linkedin.com/in/alkamelgis/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn"><svg viewBox="0 0 24 24"><path d="M4.5 9h3v10.5h-3zM6 3.7a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5zM10 9h2.9v1.4c.4-.8 1.4-1.7 3-1.7 3.1 0 3.6 2 3.6 4.7v6.1h-3v-5.4c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8v5.5H10z" fill="currentColor" stroke="none"/></svg></a>
   </nav>
 </footer>
+<button id="openHint" aria-label="Open the book"><span class="dot" aria-hidden="true"></span><span>Click the cover to open the book</span></button>
 <div id="reader" hidden><div class="grab"><b id="rdTitle"></b><button class="btn sm" id="rdToggle" aria-expanded="true">Hide text</button></div><div id="rdHost"></div></div>
 <div id="seltb" class="glass" hidden role="toolbar" aria-label="Selection tools"></div>
 <div id="drawer" class="glass" hidden role="dialog" aria-modal="false"><header><h2 id="dwT"></h2><button class="tb" id="dwX" aria-label="Close panel"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header><div class="body" id="dwB"></div></div>
@@ -769,7 +780,7 @@ const AR_UI={
 "Sound on":"الصوت مفعّل","Sound off":"الصوت متوقف","Reduced motion on":"تقليل الحركة مفعّل","Reduced motion off":"تقليل الحركة متوقف","Make your prediction first":"توقّع أولاً",
 "Flashcard added to My cards":"أُضيفت البطاقة إلى بطاقاتي","Turn to a lesson to watch its figure":"انتقل إلى درس لمشاهدة مجسّمه","Figures are in the GISP book":"المجسّمات موجودة في كتاب GISP",
 "Reading aloud · press Esc to stop":"قراءة بصوت عالٍ · اضغط Esc للإيقاف","No questions match those settings":"لا توجد أسئلة بهذه الإعدادات","Notes copied":"نُسخت الملاحظات",
-"Binding the book":"تجليد الكتاب","Setting the type":"صفّ الحروف","Folding the pop-ups":"طيّ المجسّمات","Ready":"جاهز","Reading view":"وضع القراءة","Mohamed Alkamel":"محمد الكامل","All rights reserved.":"جميع الحقوق محفوظة.","Reading aloud":"القراءة بصوت","Figures":"المجسّمات","Viewing angle":"زاوية الرؤية","Reader":"القارئ","Page":"الصفحة","Top":"من الأعلى","Front":"أمامي","Side":"جانبي","Isometric":"منظور مائل","Figure":"المجسّم","Turntable":"دوران","Projection":"الإسقاط","3D perspective":"منظور 3D","2D plan":"مسقط 2D","Book view":"منظر الكتاب",
+"Binding the book":"تجليد الكتاب","Setting the type":"صفّ الحروف","Folding the pop-ups":"طيّ المجسّمات","Ready":"جاهز","Reading view":"وضع القراءة","Click the cover to open the book":"اضغط على الغلاف لفتح الكتاب","Open the book":"افتح الكتاب","Mohamed Alkamel":"محمد الكامل","All rights reserved.":"جميع الحقوق محفوظة.","Reading aloud":"القراءة بصوت","Figures":"المجسّمات","Viewing angle":"زاوية الرؤية","Reader":"القارئ","Page":"الصفحة","Top":"من الأعلى","Front":"أمامي","Side":"جانبي","Isometric":"منظور مائل","Figure":"المجسّم","Turntable":"دوران","Projection":"الإسقاط","3D perspective":"منظور 3D","2D plan":"مسقط 2D","Book view":"منظر الكتاب",
 "Week":"الأسبوع","not practised":"لم يُتدرَّب","AI-generated":"مولَّد بالذكاء الاصطناعي","Practice":"تدريب","Mock exam":"اختبار تجريبي",
 };
 const AR_RX=[[/^Lesson (\d+) · Concept$/,"الدرس $1 · المفهوم"],[/^Lesson (\d+) · Vocabulary & prediction$/,"الدرس $1 · المصطلحات والتوقّع"],[/^Lesson (\d+) · Knowledge check$/,"الدرس $1 · التحقق من الفهم"],
@@ -817,9 +828,9 @@ function woodTex(night){
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t;
 }
 function clothTex(){
-  const c=mkCanvas(512,512),g=c.getContext("2d"),R=rngF(21);g.fillStyle="#E9B93A";g.fillRect(0,0,512,512);
-  for(let y=0;y<512;y+=2){g.fillStyle=`rgba(120,80,0,${.05+R()*.05})`;g.fillRect(0,y,512,1);}
-  for(let x=0;x<512;x+=2){g.fillStyle=`rgba(255,240,190,${.04+R()*.05})`;g.fillRect(x,0,1,512);}
+  const c=mkCanvas(512,512),g=c.getContext("2d"),R=rngF(21);g.fillStyle="#1F4E8C";g.fillRect(0,0,512,512);
+  for(let y=0;y<512;y+=2){g.fillStyle=`rgba(5,18,45,${.07+R()*.07})`;g.fillRect(0,y,512,1);}
+  for(let x=0;x<512;x+=2){g.fillStyle=`rgba(170,200,240,${.03+R()*.05})`;g.fillRect(x,0,1,512);}
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);t.encoding=THREE.sRGBEncoding;return t;
 }
 function edgeTex(){
@@ -929,26 +940,66 @@ function props(){
   const el=new T.Mesh(new T.BoxGeometry(.012,.036,.84),mat(0x9C7A2E,{metalness:.4,roughness:.4}));el.position.set(-1.62+.24,.018,-.55);el.rotation.y=.18;g.add(el);
   G.scene.add(g);
 }
+/* front cover artwork: blue book-cloth with gold-foil title (drawn for the outside face of a board) */
+function coverArt(ar){const W=1050,H=1390,c=mkCanvas(W,H),g=c.getContext("2d"),R=rngF(ar?7:3);
+  g.fillStyle="#1F4E8C";g.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=2){g.fillStyle=`rgba(5,18,45,${.07+R()*.07})`;g.fillRect(0,y,W,1);}
+  for(let x=0;x<W;x+=2){g.fillStyle=`rgba(170,200,240,${.03+R()*.05})`;g.fillRect(x,0,1,H);}
+  const vg=g.createRadialGradient(W/2,H*.42,80,W/2,H/2,H*.75);vg.addColorStop(0,"rgba(255,255,255,.07)");vg.addColorStop(1,"rgba(0,0,20,.28)");g.fillStyle=vg;g.fillRect(0,0,W,H);
+  const gold=(y0,y1)=>{const gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,"#F6E2A2");gr.addColorStop(.5,"#C99A3B");gr.addColorStop(1,"#E9CC7A");return gr;};
+  g.strokeStyle=gold(0,H);g.lineWidth=4;g.strokeRect(54,54,W-108,H-108);g.lineWidth=1.5;g.strokeRect(70,70,W-140,H-140);
+  // corner ornaments
+  g.fillStyle=gold(0,H);[[70,70],[W-70,70],[70,H-70],[W-70,H-70]].forEach(([x,y])=>{g.save();g.translate(x,y);g.rotate(Math.PI/4);g.fillRect(-9,-9,18,18);g.restore();});
+  // globe emblem
+  const cx=W/2,cy=H*.33,r=150;g.strokeStyle=gold(cy-r,cy+r);g.lineWidth=5;g.beginPath();g.arc(cx,cy,r,0,7);g.stroke();g.lineWidth=2.5;
+  for(let k=1;k<4;k++){g.beginPath();g.ellipse(cx,cy,r*k/4,r,0,0,7);g.stroke();}
+  [-.66,-.33,0,.33,.66].forEach(f=>{const yy=cy+f*r,hw=Math.sqrt(1-f*f)*r;g.beginPath();g.moveTo(cx-hw,yy);g.lineTo(cx+hw,yy);g.stroke();});
+  g.lineWidth=3;g.beginPath();g.ellipse(cx,cy,r*1.32,r*.42,-.35,0,7);g.stroke();
+  g.textAlign="center";g.textBaseline="alphabetic";
+  const txt=(s,font,y,ls)=>{g.font=font;g.fillStyle="rgba(0,0,0,.35)";g.fillText(s,cx+2,y+3);g.fillStyle=gold(y-120,y+10);g.fillText(s,cx,y);};
+  if(ar){g.direction="rtl";
+    txt("GISP",'600 190px "Crimson Pro",Georgia,serif',H*.66,0);
+    txt("الكتاب التفاعلي ثلاثي الأبعاد",'700 50px "Amiri","Noto Naskh Arabic",serif',H*.735);
+    g.fillStyle=gold(0,H);g.fillRect(cx-90,H*.765,180,3);
+    txt("اختبار المعرفة التقنية الأساسية في نظم المعلومات الجغرافية",'400 30px "Noto Naskh Arabic","Amiri",serif',H*.81);
+    txt("محمد الكامل",'700 40px "Amiri","Noto Naskh Arabic",serif',H*.9);
+  }else{
+    txt("GISP",'600 190px "Crimson Pro",Georgia,serif',H*.66);
+    txt("INTERACTIVE 3D STUDY BOOK",'500 34px "JetBrains Mono",monospace',H*.725);
+    g.fillStyle=gold(0,H);g.fillRect(cx-90,H*.755,180,3);
+    txt("Geospatial Core Technical Knowledge Exam",'italic 400 38px "Crimson Pro",Georgia,serif',H*.8);
+    txt("MOHAMED ALKAMEL",'500 30px "JetBrains Mono",monospace',H*.9);
+  }
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t;}
 function buildBook(){
-  const T=THREE,book=new T.Group(),cloth=clothTex(),coverM=new T.MeshStandardMaterial({map:cloth,roughness:.9,color:0xffffff});
-  const board=(sx)=>{const m=new T.Mesh(new T.BoxGeometry(PW+.05,.016,PD+.07),coverM);m.position.set(sx*(PW/2+.03),.008,0);m.castShadow=true;m.receiveShadow=true;return m;};
-  book.add(board(-1),board(1));
+  const T=THREE,book=new T.Group(),cloth=clothTex(),coverM=new T.MeshStandardMaterial({map:cloth,roughness:.82,color:0xffffff});
+  const BT0=.05,HY=.016+BT0;   /* hinge height: top of a page block; turning one half by 180 degrees around it lays it exactly on the other */
+  G.hingeL=new T.Group();G.hingeR=new T.Group();G.hingeL.position.set(0,HY,0);G.hingeR.position.set(0,HY,0);book.add(G.hingeL,G.hingeR);
+  G.half=sx=>sx<0?G.hingeL:G.hingeR;
+  const board=(sx)=>{const art=new T.MeshStandardMaterial({map:coverArt(sx>0),roughness:.7,metalness:.05});
+    const m=new T.Mesh(new T.BoxGeometry(PW+.05,.016,PD+.07),[coverM,coverM,coverM,art,coverM,coverM]);m.position.set(sx*(PW/2+.03),.008-HY,0);m.castShadow=true;m.receiveShadow=true;
+    /* the outside face (-y) is seen turned 180 degrees once the half is folded over, so turn the artwork to read upright */
+    art.map.wrapS=art.map.wrapT=T.RepeatWrapping;art.map.repeat.set(-1,-1);art.map.offset.set(1,1);return m;};
+  G.hingeL.add(board(-1));G.hingeR.add(board(1));
+  /* rounded spine seen when the book is closed */
+  G.spineClosed=[-1,1].map(s=>{const th=2*(.016+BT0)+.002,m=new T.Mesh(new T.CylinderGeometry(th/2,th/2,PD+.07,24,1,true,0,Math.PI),coverM);m.rotation.x=Math.PI/2;m.rotation.y=s>0?Math.PI:0;
+    m.scale.x=.55;m.position.set(0,th/2-.001,0);m.visible=false;m.castShadow=true;book.add(m);return m;});
   const spine=new T.Mesh(new T.CylinderGeometry(.045,.045,PD+.07,20,1,true,Math.PI/2,Math.PI),new T.MeshStandardMaterial({map:cloth,roughness:.9,side:T.DoubleSide}));spine.rotation.x=Math.PI/2;spine.position.y=.02;book.add(spine);
   const eT=edgeTex(),paperM=new T.MeshStandardMaterial({color:0xF2ECDE,roughness:.95});
   const BT=.05;
-  [-1,1].forEach(sx=>{const em=new T.MeshStandardMaterial({map:eT,roughness:.95});const blk=new T.Mesh(new T.BoxGeometry(PW-.01,BT,PD),[em,em,paperM,paperM,em,em]);blk.position.set(sx*(PW/2+.005),.016+BT/2,0);blk.castShadow=true;blk.receiveShadow=true;book.add(blk);});
+  [-1,1].forEach(sx=>{const em=new T.MeshStandardMaterial({map:eT,roughness:.95});const blk=new T.Mesh(new T.BoxGeometry(PW-.01,BT,PD),[em,em,paperM,paperM,em,em]);blk.position.set(sx*(PW/2+.005),.016+BT/2-HY,0);blk.castShadow=true;blk.receiveShadow=true;G.half(sx).add(blk);});
   // curved page surfaces
   G.pages={};
   ["left","right"].forEach(side=>{const geo=new T.PlaneGeometry(PW,PD,48,1);geo.rotateX(-Math.PI/2);const P=geo.attributes.position;
     for(let i=0;i<P.count;i++){const x=P.getX(i)+PW/2,u=x/PW;const y=PAGE_Y-.016*Math.exp(-u*14)+.004*Math.sin(Math.PI*Math.min(1,u*1.2));P.setX(i,side==="right"?x:-x);P.setY(i,y);}
     if(side==="left"){const ix=geo.index.array;for(let i=0;i<ix.length;i+=3){const t=ix[i];ix[i]=ix[i+1];ix[i+1]=t;}}
-    geo.computeVertexNormals();const m=new T.Mesh(geo,new T.MeshStandardMaterial({map:texFrom(pageCanvas({side}),side==="left"),roughness:.93}));m.receiveShadow=true;book.add(m);G.pages[side]=m;});
+    geo.computeVertexNormals();const m=new T.Mesh(geo,new T.MeshStandardMaterial({map:texFrom(pageCanvas({side}),side==="left"),roughness:.93}));m.receiveShadow=true;m.position.y=-HY;G.half(side==="left"?-1:1).add(m);G.pages[side]=m;});
   // ribbon
   const pts=[[.012,PAGE_Y+.002,-.62],[.016,PAGE_Y+.002,-.1],[.022,PAGE_Y+.002,.5],[.03,PAGE_Y-.004,.67],[.05,.03,.72],[.07,.002,.86],[.085,.001,.98]].map(p=>new T.Vector3(...p));
   const curve=new T.CatmullRomCurve3(pts),N=60,rw=.032,pos=[],idx=[];
   for(let i=0;i<=N;i++){const p=curve.getPoint(i/N);pos.push(p.x-rw/2,p.y,p.z,p.x+rw/2,p.y,p.z);if(i<N){const a=i*2;idx.push(a,a+2,a+1,a+1,a+2,a+3);}}
   const rg=new T.BufferGeometry();rg.setAttribute("position",new T.Float32BufferAttribute(pos,3));rg.setIndex(idx);rg.computeVertexNormals();
-  const rib=new T.Mesh(rg,new T.MeshStandardMaterial({color:0x1F4E9C,roughness:.55,side:T.DoubleSide}));rib.castShadow=true;book.add(rib);G.ribbon=rib;
+  const rib=new T.Mesh(rg,new T.MeshStandardMaterial({color:0xC9A045,roughness:.45,metalness:.25,side:T.DoubleSide}));rib.castShadow=true;book.add(rib);G.ribbon=rib;
   // turning leaf
   const lg=new T.PlaneGeometry(PW,PD,40,1);lg.rotateX(-Math.PI/2);
   G.leafFront=new T.Mesh(lg,new T.MeshStandardMaterial({roughness:.93,side:T.FrontSide}));
@@ -1035,7 +1086,26 @@ function set2D(on){
   if(on)flyTo(viewPreset(kind),true);else setView(G.view&&G.view!=="top"?G.view:"book");
 }
 function flyTo(v,instant){if(instant||RM()){G.cam.position.set(...v.p);G.ctl.target.set(...v.t);G.fly=null;return;}G.fly={p:new THREE.Vector3(...v.p),t:new THREE.Vector3(...v.t),time:1.6};}
-function resetView(instant){G.view="book";if(G.ctl)G.ctl.autoRotate=false;G.orbitPending=false;flyTo(G.is2D?viewPreset("book"):viewFor("book"),instant);}
+/* ---- the book opens and closes like a real hardcover ---- */
+function viewClosed(){const cam=G.cam,vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*cam.aspect),cx=G.closedSide*(PW/2+.03),d=Math.max((1.3/2)/Math.tan(hf/2),(1.62/2)/Math.tan(vf/2))*1.06,el=1.02;
+  return{p:[cx,Math.sin(el)*d+.05,Math.cos(el)*d+.12],t:[cx,.04,.06]};}
+function closedSideNow(){return(typeof isAR==="function"&&isAR()&&(typeof S==="undefined"||S.vol==="gisp"))?-1:1;}
+function setClosedVis(closed){if(G.spineClosed)G.spineClosed.forEach((m,i)=>m.visible=closed&&((i===0)===(G.closedSide>0)));document.body.classList.toggle("closed",closed);const v=closed?"hidden":"";if(G.leftEl)G.leftEl.style.visibility=v;if(G.rightEl)G.rightEl.style.visibility=v;
+  if(G.demoRoot)G.demoRoot.visible=!closed;if(G.ribbon)G.ribbon.visible=!closed;}
+function closeBook(instant){if(G.closed&&!instant)return Promise.resolve();
+  gsap.killTweensOf([G.hingeL.rotation,G.hingeR.rotation]);G.closedSide=closedSideNow();const h=G.closedSide>0?G.hingeL:G.hingeR,target=G.closedSide>0?-Math.PI:Math.PI;G.hingeL.rotation.z=G.hingeR.rotation.z=0;
+  G.closed=true;if(G.ctl)G.ctl.autoRotate=false;
+  if(instant||RM()){h.rotation.z=target;setClosedVis(true);flyTo(viewClosed(),instant);return Promise.resolve();}
+  if(G.leftEl)G.leftEl.style.visibility=G.rightEl.style.visibility="hidden";if(G.demoRoot)G.demoRoot.visible=false;if(G.ribbon)G.ribbon.visible=false;
+  try{sfx("flip");}catch(e){}flyTo(viewClosed());
+  return new Promise(res=>gsap.to(h.rotation,{z:target,duration:1.5,ease:"power2.inOut",onComplete:()=>{setClosedVis(true);res();}}));}
+function openBook(){if(!G.closed)return Promise.resolve();gsap.killTweensOf([G.hingeL.rotation,G.hingeR.rotation]);const h=G.closedSide>0?G.hingeL:G.hingeR;G.closed=false;document.body.classList.remove("closed");if(G.spineClosed)G.spineClosed.forEach(m=>m.visible=false);
+  try{sfx("flip");}catch(e){}
+  const done=()=>{h.rotation.z=0;setClosedVis(false);if(typeof renderSpread==="function")renderSpread({reDemo:true});};
+  if(RM()){done();resetView(true);return Promise.resolve();}
+  flyTo(G.is2D?viewPreset("book"):viewFor("book"));
+  return new Promise(res=>gsap.to(h.rotation,{z:0,duration:1.6,ease:"power2.inOut",onUpdate:()=>{if(Math.abs(h.rotation.z)<.35&&G.ribbon&&!G.ribbon.visible){G.ribbon.visible=true;}},onComplete:()=>{done();res();}}));}
+function resetView(instant){if(G.closed){flyTo(viewClosed(),instant);return;}G.view="book";if(G.ctl)G.ctl.autoRotate=false;G.orbitPending=false;flyTo(G.is2D?viewPreset("book"):viewFor("book"),instant);}
 function setTheme(night){
   const T=THREE;document.documentElement.dataset.night=night?"1":"0";
   if(G.desk.material.map)G.desk.material.map.dispose();G.desk.material.map=woodTex(night);G.desk.material.needsUpdate=true;
@@ -1455,14 +1525,14 @@ function renderSpread(opts={}){
   $("#rdTitle").textContent=$("#hTitle").textContent;
   $("#hPage").textContent=gisp?(s===0?"Front matter":`Lesson ${ls.idx+1} · ${["Concept","Vocabulary & prediction","Knowledge check"][ls.part]}`):`pp. ${s*2+1}–${s*2+2} of ${DOC?DOC.pages.length:0}`;
   $("#hProg").style.width=(spreadCount()>1?s/(spreadCount()-1)*100:100)+"%";
-  $("#hPrev").disabled=s===0;$("#hNext").disabled=s>=spreadCount()-1;
+  $("#hPrev").disabled=false;$("#hPrev").title=s===0?tt("Close the book","أغلق الكتاب"):tt("Previous page","الصفحة السابقة");$("#hNext").disabled=s>=spreadCount()-1;
   const bm=(S.bm[S.vol]||[]).includes(s);["#hMark","#mMark"].forEach(k=>{$(k).setAttribute("aria-pressed",bm);$(k).classList.toggle("on",bm);});
   $("#hPlay").disabled=!gisp;
   bindPages();applyHighlights();
   if(!opts.noDemo){if(gisp){const key=s===0?"hero":ls.L.demo;if(!G.demo||G.demo.key!==key||opts.reDemo)showDemo(key,0);}else clearDemo();}
   $("#volTitle").textContent=gisp?tt("GISP","كتاب GISP"):(VOL()?VOL().title:tt("Document","مستند"));$("#volSub").textContent=gisp?tt("Interactive edition","الطبعة التفاعلية"):tt("Your document","مستندك");
 }
-async function go(n,instant){if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
+async function go(n,instant){if(G.closed&&!G.webOn){await openBook();return;}if(!G.webOn&&n<0&&curSpread()===0){stopWatch();if(LS.on)stopListen();await closeBook();return;}if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
   const cnt=spreadCount(),from=curSpread();n=Math.max(0,Math.min(cnt-1,n));if(n===from||busy)return;busy=true;stopWatch();if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();}
   const dir=n>from?1:-1,gisp=S.vol==="gisp";
   const sameDemo=gisp&&n>0&&from>0&&lessonAt(n).L===lessonAt(from).L;
@@ -1484,7 +1554,7 @@ function bindPages(){
   hosts.forEach(h=>{if(!h||h._b)return;h._b=1;h.addEventListener("click",onPageClick);});
 }
 /* which outer page edge (if any) is under the pointer, in book coordinates — the outer ~22% of each page turns it */
-function edgeAt(e){if(G.webOn||G.compact||!G.r)return null;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
+function edgeAt(e){if(G.closed||G.webOn||G.compact||!G.r)return null;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
   const p=new THREE.Vector3();if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p))return null;
   const ax=Math.abs(p.x);if(Math.abs(p.z)>PD/2+.04||ax>PW+.08||ax<PW*.78)return null;
   if(ax<PW*.86&&G.demo&&ray.intersectObject(G.demo.group,true).length)return null;return p.x>0?"right":"left";}
@@ -1545,7 +1615,7 @@ function speakBlock(){const g=LS.gen;if(!LS.on||LS.paused)return;
   u.onerror=e=>{if(g!==LS.gen)return;if(e.error==="interrupted"||e.error==="canceled")return;LS.i++;setTimeout(speakBlock,200);};
   speechSynthesis.speak(u);}
 function startBlocks(){LS.gen++;LS.blocks=collectBlocks();LS.i=0;try{speechSynthesis.cancel();}catch(e){}setTimeout(speakBlock,120);}
-function startListen(){if(!("speechSynthesis" in window)){toast(tt("Read aloud is not available in this browser","القراءة بصوت غير متاحة في هذا المتصفح"));return;}
+function startListen(){if(G.closed&&!G.webOn){openBook().then(()=>setTimeout(startListen,300));return;}if(!("speechSynthesis" in window)){toast(tt("Read aloud is not available in this browser","القراءة بصوت غير متاحة في هذا المتصفح"));return;}
   stopWatch();LS.on=true;LS.paused=false;lbUpdate();startBlocks();}
 function stopListen(){LS.on=false;LS.paused=false;LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();lbUpdate();}
 function pauseListen(){if(!LS.on)return;LS.paused=!LS.paused;LS.gen++;if(LS.paused){try{speechSynthesis.cancel();}catch(e){}}else{const g=LS.gen;setTimeout(()=>{if(g===LS.gen)speakBlock();},80);}lbUpdate();}
@@ -1876,6 +1946,7 @@ function wire(){
   $("#mZin").onclick=()=>zoom(.8);$("#mZout").onclick=()=>zoom(1.25);
   $("#mFull").onclick=()=>{const d=document;if(d.fullscreenElement)d.exitFullscreen&&d.exitFullscreen();else{const p=d.documentElement.requestFullscreen&&d.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>toast("Fullscreen isn't available in this view"));else if(!p)toast("Fullscreen isn't available in this view");}};
   $("#mListen").onclick=()=>{$("#more").hidden=true;LS.on?stopListen():startListen();};
+  $("#openHint").onclick=()=>openBook();
   $("#webBtn").onclick=()=>toggleWeb();$("#web").addEventListener("click",onWebClick);
   $("#hListen").onclick=()=>LS.on?stopListen():startListen();
   $("#lbStop").onclick=stopListen;$("#lbPause").onclick=pauseListen;$("#lbRate").onclick=cycleRate;$("#mRate").onclick=cycleRate;lbUpdate();
@@ -1892,7 +1963,7 @@ function wire(){
   // easy mouse turning: click near either outer edge of the open book
   const edgeHit=edgeAt;
   G.r.domElement.addEventListener("pointermove",e=>{if(e.buttons)return;const h=edgeHit(e);G.r.domElement.style.cursor=h?(h==="right"?"e-resize":"w-resize"):"";});
-  G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
+  G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;if(G.closed){openBook();return;}const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
   $("#edgePrev").onclick=()=>go(curSpread()+fwdFor("left"));$("#edgeNext").onclick=()=>go(curSpread()+fwdFor("right"));
   // mouse wheel with Shift (or a horizontal trackpad swipe) turns pages; plain wheel still zooms
   let wl=0;G.r.domElement.addEventListener("wheel",e=>{const dx=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:(e.shiftKey?e.deltaY:0);if(!dx)return;e.preventDefault();e.stopImmediatePropagation();const now=performance.now();if(now-wl<700||Math.abs(dx)<12)return;wl=now;go(curSpread()+fwdFor(dx>0?"right":"left"));},{capture:true,passive:false});
@@ -1909,11 +1980,11 @@ function trNode(n){const raw=ORIG.has(n)?ORIG.get(n):n.nodeValue;const k=raw.tri
 const ATTRS=["aria-label","placeholder","title"];
 function trEl(el){ATTRS.forEach(a=>{if(!el.hasAttribute||!el.hasAttribute(a))return;const key="data-en-"+a;const raw=el.getAttribute(key)??el.getAttribute(a);const out=isAR()?AR_UI[raw]||AR_A[raw]:null;if(out){if(!el.hasAttribute(key))el.setAttribute(key,raw);if(el.getAttribute(a)!==out)el.setAttribute(a,out);}else if(el.hasAttribute(key)&&!isAR()){el.setAttribute(a,raw);}});}
 const AR_A={"Library tools":"أدوات المكتبة","Book controls":"أدوات الكتاب","Table of contents":"المحتويات","Previous page":"الصفحة السابقة","Next page":"الصفحة التالية","Watch demo":"شاهد العرض","Pause demo":"إيقاف العرض","Bookmark this page":"أضف إشارة لهذه الصفحة","Reset camera view":"إعادة ضبط المنظر","More settings":"إعدادات إضافية","Sound":"الصوت","Night desk theme":"مكتب ليلي","Reduced motion":"تقليل الحركة","Zoom in":"تكبير","Zoom out":"تصغير","Fullscreen":"ملء الشاشة","Read page aloud":"اقرأ الصفحة بصوت عالٍ","Close panel":"إغلاق اللوحة","Close":"إغلاق","Reading view":"وضع القراءة","Ask the tutor":"اسأل المعلّم","Ask about this page…":"اسأل عن هذه الصفحة…","Your note…":"ملاحظتك…","Yellow highlight":"تظليل أصفر","Green highlight":"تظليل أخضر","Blue highlight":"تظليل أزرق","Add a note":"أضف ملاحظة","Read selection aloud":"اقرأ التحديد","Explain with AI":"اشرح بالذكاء الاصطناعي","Make a flashcard":"اصنع بطاقة","Flip card":"اقلب البطاقة","Selection tools":"أدوات التحديد","Settings":"الإعدادات","Exam centre":"مركز الاختبارات","Flashcards":"البطاقات","Notes and highlights":"الملاحظات والتظليل","AI tutor":"المعلّم الذكي","Progress and plan":"التقدّم والخطة","Library":"المكتبة","Filter rows":"تصفية","Listen to this page":"استمع إلى الصفحة","Web page view":"عرض صفحة الويب","Back to the 3D book":"العودة إلى الكتاب ثلاثي الأبعاد","Reading speed":"سرعة القراءة","Stop reading":"إيقاف القراءة","Pause":"إيقاف مؤقت","Previous page":"الصفحة السابقة","Next page":"الصفحة التالية","Figure explorer":"مستكشف المجسّمات","Switch to 2D view":"التبديل إلى منظر 2D","Switch to 3D view":"التبديل إلى منظر 3D","Viewing angles":"زوايا الرؤية","Projection":"الإسقاط","Figures":"المجسّمات"};
-const CHROME="#topbar,#hud,#more,#views,#listenBar,#sign,#drawer,#sheet,#reader .grab,#toast,#loader,#caption,#seltb";
+const CHROME="#topbar,#hud,#more,#views,#listenBar,#sign,#openHint,#drawer,#sheet,#reader .grab,#toast,#loader,#caption,#seltb";
 function trAll(root){const roots=root?[root]:$$(CHROME);roots.forEach(r=>{if(!r)return;const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.parentElement&&n.parentElement.closest(".qt,.qo,.fc,.msg,.note q,.vol .cover b,input,textarea"))continue;trNode(n);}[r,...r.querySelectorAll("*")].forEach(trEl);});}
 let trBusy=false;const MO=new MutationObserver(ms=>{if(trBusy||!isAR())return;trBusy=true;try{ms.forEach(m=>{const t=m.target.nodeType===3?m.target.parentElement:m.target;if(t&&t.closest&&t.closest(CHROME))trAll(t.closest(CHROME));});}finally{trBusy=false;}});
 function setLang(l){S.lang=l;save();const ar=l==="ar";document.documentElement.lang=ar?"ar":"en";document.documentElement.dir=ar?"rtl":"ltr";$("#langBtn").innerHTML=ar?'<span lang="en">EN</span>':'<span lang="ar">ع</span>';$("#langBtn").setAttribute("aria-label",ar?"Switch to English":"التبديل إلى العربية");$("#langBtn").title=ar?"Switch to English":"التبديل إلى العربية";
-  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
+  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}if(G.closed)closeBook(true);if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
 
 /* ---------- boot ---------- */
 async function boot(){
@@ -1927,7 +1998,7 @@ async function boot(){
   if(S.vol!=="gisp"){DOC=await idbGet(S.vol);if(!DOC)S.vol="gisp";}
   wire();layoutMode();MO.observe(document.body,{subtree:true,childList:true,characterData:true});
   document.documentElement.lang=isAR()?"ar":"en";document.documentElement.dir=isAR()?"rtl":"ltr";$("#langBtn").innerHTML=isAR()?'<span lang="en">EN</span>':'<span lang="ar">ع</span>';
-  renderSpread({reDemo:true});trAll();
+  renderSpread({reDemo:true});trAll();closeBook(true);
   step(100,"Ready");setTimeout(()=>$("#loader").classList.add("done"),250);
 }
 boot();

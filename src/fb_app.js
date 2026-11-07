@@ -138,14 +138,14 @@ function renderSpread(opts={}){
   $("#rdTitle").textContent=$("#hTitle").textContent;
   $("#hPage").textContent=gisp?(s===0?"Front matter":`Lesson ${ls.idx+1} · ${["Concept","Vocabulary & prediction","Knowledge check"][ls.part]}`):`pp. ${s*2+1}–${s*2+2} of ${DOC?DOC.pages.length:0}`;
   $("#hProg").style.width=(spreadCount()>1?s/(spreadCount()-1)*100:100)+"%";
-  $("#hPrev").disabled=s===0;$("#hNext").disabled=s>=spreadCount()-1;
+  $("#hPrev").disabled=false;$("#hPrev").title=s===0?tt("Close the book","أغلق الكتاب"):tt("Previous page","الصفحة السابقة");$("#hNext").disabled=s>=spreadCount()-1;
   const bm=(S.bm[S.vol]||[]).includes(s);["#hMark","#mMark"].forEach(k=>{$(k).setAttribute("aria-pressed",bm);$(k).classList.toggle("on",bm);});
   $("#hPlay").disabled=!gisp;
   bindPages();applyHighlights();
   if(!opts.noDemo){if(gisp){const key=s===0?"hero":ls.L.demo;if(!G.demo||G.demo.key!==key||opts.reDemo)showDemo(key,0);}else clearDemo();}
   $("#volTitle").textContent=gisp?tt("GISP","كتاب GISP"):(VOL()?VOL().title:tt("Document","مستند"));$("#volSub").textContent=gisp?tt("Interactive edition","الطبعة التفاعلية"):tt("Your document","مستندك");
 }
-async function go(n,instant){if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
+async function go(n,instant){if(G.closed&&!G.webOn){await openBook();return;}if(!G.webOn&&n<0&&curSpread()===0){stopWatch();if(LS.on)stopListen();await closeBook();return;}if(G.webOn){const c=spreadCount();n=Math.max(0,Math.min(c-1,n));S.spread[S.vol]=n;save();const el=$("#w-"+n);if(el)el.scrollIntoView({behavior:RM()?"auto":"smooth",block:"start"});webTocMark(n);if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();setTimeout(()=>{if(LS.on)startBlocks();},450);}return;}
   const cnt=spreadCount(),from=curSpread();n=Math.max(0,Math.min(cnt-1,n));if(n===from||busy)return;busy=true;stopWatch();if(LS.on){LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();}
   const dir=n>from?1:-1,gisp=S.vol==="gisp";
   const sameDemo=gisp&&n>0&&from>0&&lessonAt(n).L===lessonAt(from).L;
@@ -167,7 +167,7 @@ function bindPages(){
   hosts.forEach(h=>{if(!h||h._b)return;h._b=1;h.addEventListener("click",onPageClick);});
 }
 /* which outer page edge (if any) is under the pointer, in book coordinates — the outer ~22% of each page turns it */
-function edgeAt(e){if(G.webOn||G.compact||!G.r)return null;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
+function edgeAt(e){if(G.closed||G.webOn||G.compact||!G.r)return null;const rc=G.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera({x:(e.clientX-rc.left)/rc.width*2-1,y:-(e.clientY-rc.top)/rc.height*2+1},G.cam);
   const p=new THREE.Vector3();if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-PAGE_Y),p))return null;
   const ax=Math.abs(p.x);if(Math.abs(p.z)>PD/2+.04||ax>PW+.08||ax<PW*.78)return null;
   if(ax<PW*.86&&G.demo&&ray.intersectObject(G.demo.group,true).length)return null;return p.x>0?"right":"left";}
@@ -228,7 +228,7 @@ function speakBlock(){const g=LS.gen;if(!LS.on||LS.paused)return;
   u.onerror=e=>{if(g!==LS.gen)return;if(e.error==="interrupted"||e.error==="canceled")return;LS.i++;setTimeout(speakBlock,200);};
   speechSynthesis.speak(u);}
 function startBlocks(){LS.gen++;LS.blocks=collectBlocks();LS.i=0;try{speechSynthesis.cancel();}catch(e){}setTimeout(speakBlock,120);}
-function startListen(){if(!("speechSynthesis" in window)){toast(tt("Read aloud is not available in this browser","القراءة بصوت غير متاحة في هذا المتصفح"));return;}
+function startListen(){if(G.closed&&!G.webOn){openBook().then(()=>setTimeout(startListen,300));return;}if(!("speechSynthesis" in window)){toast(tt("Read aloud is not available in this browser","القراءة بصوت غير متاحة في هذا المتصفح"));return;}
   stopWatch();LS.on=true;LS.paused=false;lbUpdate();startBlocks();}
 function stopListen(){LS.on=false;LS.paused=false;LS.gen++;try{speechSynthesis.cancel();}catch(e){}clearReading();lbUpdate();}
 function pauseListen(){if(!LS.on)return;LS.paused=!LS.paused;LS.gen++;if(LS.paused){try{speechSynthesis.cancel();}catch(e){}}else{const g=LS.gen;setTimeout(()=>{if(g===LS.gen)speakBlock();},80);}lbUpdate();}
@@ -559,6 +559,7 @@ function wire(){
   $("#mZin").onclick=()=>zoom(.8);$("#mZout").onclick=()=>zoom(1.25);
   $("#mFull").onclick=()=>{const d=document;if(d.fullscreenElement)d.exitFullscreen&&d.exitFullscreen();else{const p=d.documentElement.requestFullscreen&&d.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>toast("Fullscreen isn't available in this view"));else if(!p)toast("Fullscreen isn't available in this view");}};
   $("#mListen").onclick=()=>{$("#more").hidden=true;LS.on?stopListen():startListen();};
+  $("#openHint").onclick=()=>openBook();
   $("#webBtn").onclick=()=>toggleWeb();$("#web").addEventListener("click",onWebClick);
   $("#hListen").onclick=()=>LS.on?stopListen():startListen();
   $("#lbStop").onclick=stopListen;$("#lbPause").onclick=pauseListen;$("#lbRate").onclick=cycleRate;$("#mRate").onclick=cycleRate;lbUpdate();
@@ -575,7 +576,7 @@ function wire(){
   // easy mouse turning: click near either outer edge of the open book
   const edgeHit=edgeAt;
   G.r.domElement.addEventListener("pointermove",e=>{if(e.buttons)return;const h=edgeHit(e);G.r.domElement.style.cursor=h?(h==="right"?"e-resize":"w-resize"):"";});
-  G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
+  G.r.domElement.addEventListener("pointerup",e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>6)return;if(G.closed){openBook();return;}const h=edgeHit(e);if(h)go(curSpread()+fwdFor(h));});
   $("#edgePrev").onclick=()=>go(curSpread()+fwdFor("left"));$("#edgeNext").onclick=()=>go(curSpread()+fwdFor("right"));
   // mouse wheel with Shift (or a horizontal trackpad swipe) turns pages; plain wheel still zooms
   let wl=0;G.r.domElement.addEventListener("wheel",e=>{const dx=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:(e.shiftKey?e.deltaY:0);if(!dx)return;e.preventDefault();e.stopImmediatePropagation();const now=performance.now();if(now-wl<700||Math.abs(dx)<12)return;wl=now;go(curSpread()+fwdFor(dx>0?"right":"left"));},{capture:true,passive:false});
@@ -592,11 +593,11 @@ function trNode(n){const raw=ORIG.has(n)?ORIG.get(n):n.nodeValue;const k=raw.tri
 const ATTRS=["aria-label","placeholder","title"];
 function trEl(el){ATTRS.forEach(a=>{if(!el.hasAttribute||!el.hasAttribute(a))return;const key="data-en-"+a;const raw=el.getAttribute(key)??el.getAttribute(a);const out=isAR()?AR_UI[raw]||AR_A[raw]:null;if(out){if(!el.hasAttribute(key))el.setAttribute(key,raw);if(el.getAttribute(a)!==out)el.setAttribute(a,out);}else if(el.hasAttribute(key)&&!isAR()){el.setAttribute(a,raw);}});}
 const AR_A={"Library tools":"أدوات المكتبة","Book controls":"أدوات الكتاب","Table of contents":"المحتويات","Previous page":"الصفحة السابقة","Next page":"الصفحة التالية","Watch demo":"شاهد العرض","Pause demo":"إيقاف العرض","Bookmark this page":"أضف إشارة لهذه الصفحة","Reset camera view":"إعادة ضبط المنظر","More settings":"إعدادات إضافية","Sound":"الصوت","Night desk theme":"مكتب ليلي","Reduced motion":"تقليل الحركة","Zoom in":"تكبير","Zoom out":"تصغير","Fullscreen":"ملء الشاشة","Read page aloud":"اقرأ الصفحة بصوت عالٍ","Close panel":"إغلاق اللوحة","Close":"إغلاق","Reading view":"وضع القراءة","Ask the tutor":"اسأل المعلّم","Ask about this page…":"اسأل عن هذه الصفحة…","Your note…":"ملاحظتك…","Yellow highlight":"تظليل أصفر","Green highlight":"تظليل أخضر","Blue highlight":"تظليل أزرق","Add a note":"أضف ملاحظة","Read selection aloud":"اقرأ التحديد","Explain with AI":"اشرح بالذكاء الاصطناعي","Make a flashcard":"اصنع بطاقة","Flip card":"اقلب البطاقة","Selection tools":"أدوات التحديد","Settings":"الإعدادات","Exam centre":"مركز الاختبارات","Flashcards":"البطاقات","Notes and highlights":"الملاحظات والتظليل","AI tutor":"المعلّم الذكي","Progress and plan":"التقدّم والخطة","Library":"المكتبة","Filter rows":"تصفية","Listen to this page":"استمع إلى الصفحة","Web page view":"عرض صفحة الويب","Back to the 3D book":"العودة إلى الكتاب ثلاثي الأبعاد","Reading speed":"سرعة القراءة","Stop reading":"إيقاف القراءة","Pause":"إيقاف مؤقت","Previous page":"الصفحة السابقة","Next page":"الصفحة التالية","Figure explorer":"مستكشف المجسّمات","Switch to 2D view":"التبديل إلى منظر 2D","Switch to 3D view":"التبديل إلى منظر 3D","Viewing angles":"زوايا الرؤية","Projection":"الإسقاط","Figures":"المجسّمات"};
-const CHROME="#topbar,#hud,#more,#views,#listenBar,#sign,#drawer,#sheet,#reader .grab,#toast,#loader,#caption,#seltb";
+const CHROME="#topbar,#hud,#more,#views,#listenBar,#sign,#openHint,#drawer,#sheet,#reader .grab,#toast,#loader,#caption,#seltb";
 function trAll(root){const roots=root?[root]:$$(CHROME);roots.forEach(r=>{if(!r)return;const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.parentElement&&n.parentElement.closest(".qt,.qo,.fc,.msg,.note q,.vol .cover b,input,textarea"))continue;trNode(n);}[r,...r.querySelectorAll("*")].forEach(trEl);});}
 let trBusy=false;const MO=new MutationObserver(ms=>{if(trBusy||!isAR())return;trBusy=true;try{ms.forEach(m=>{const t=m.target.nodeType===3?m.target.parentElement:m.target;if(t&&t.closest&&t.closest(CHROME))trAll(t.closest(CHROME));});}finally{trBusy=false;}});
 function setLang(l){S.lang=l;save();const ar=l==="ar";document.documentElement.lang=ar?"ar":"en";document.documentElement.dir=ar?"rtl":"ltr";$("#langBtn").innerHTML=ar?'<span lang="en">EN</span>':'<span lang="ar">ع</span>';$("#langBtn").setAttribute("aria-label",ar?"Switch to English":"التبديل إلى العربية");$("#langBtn").title=ar?"Switch to English":"التبديل إلى العربية";
-  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
+  trAll();stopWatch();clearDemo();renderSpread({reDemo:true});resetView();if(DRAWER)openDrawer(DRAWER);if(!$("#sheet").hidden){const t=$("#shT").textContent;closeSheet();}if(G.closed)closeBook(true);if(G.webOn)webJump();if(exploring()){setView("figure");markView();renderExplore();}toast(ar?"تم التبديل إلى العربية":"Switched to English");}
 
 /* ---------- boot ---------- */
 async function boot(){
@@ -610,7 +611,7 @@ async function boot(){
   if(S.vol!=="gisp"){DOC=await idbGet(S.vol);if(!DOC)S.vol="gisp";}
   wire();layoutMode();MO.observe(document.body,{subtree:true,childList:true,characterData:true});
   document.documentElement.lang=isAR()?"ar":"en";document.documentElement.dir=isAR()?"rtl":"ltr";$("#langBtn").innerHTML=isAR()?'<span lang="en">EN</span>':'<span lang="ar">ع</span>';
-  renderSpread({reDemo:true});trAll();
+  renderSpread({reDemo:true});trAll();closeBook(true);
   step(100,"Ready");setTimeout(()=>$("#loader").classList.add("done"),250);
 }
 boot();

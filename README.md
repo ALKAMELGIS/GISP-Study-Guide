@@ -1,6 +1,6 @@
 # GISP Study Guide: Interactive 3D Study Book
 
-An interactive study book for the **GISCI Geospatial Core Technical Knowledge Exam (GISP)**. It looks like a real open hardcover book on a desk. The left page holds the lesson. The right page holds a pop-up 3D figure that explains the concept step by step.
+An interactive study book for the **GISCI Geospatial Core Technical Knowledge Exam (GISP)**. It looks like a real hardcover book on a desk: it starts closed under a blue cloth cover with a gold title, and you click the cover to open it. Going back from the first page closes it again. The left page holds the lesson. The right page holds a pop-up 3D figure that explains the concept step by step.
 
 ![The 3D study book](media/screenshot-book.jpg)
 

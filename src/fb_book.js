@@ -26,9 +26,9 @@ function woodTex(night){
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t;
 }
 function clothTex(){
-  const c=mkCanvas(512,512),g=c.getContext("2d"),R=rngF(21);g.fillStyle="#E9B93A";g.fillRect(0,0,512,512);
-  for(let y=0;y<512;y+=2){g.fillStyle=`rgba(120,80,0,${.05+R()*.05})`;g.fillRect(0,y,512,1);}
-  for(let x=0;x<512;x+=2){g.fillStyle=`rgba(255,240,190,${.04+R()*.05})`;g.fillRect(x,0,1,512);}
+  const c=mkCanvas(512,512),g=c.getContext("2d"),R=rngF(21);g.fillStyle="#1F4E8C";g.fillRect(0,0,512,512);
+  for(let y=0;y<512;y+=2){g.fillStyle=`rgba(5,18,45,${.07+R()*.07})`;g.fillRect(0,y,512,1);}
+  for(let x=0;x<512;x+=2){g.fillStyle=`rgba(170,200,240,${.03+R()*.05})`;g.fillRect(x,0,1,512);}
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);t.encoding=THREE.sRGBEncoding;return t;
 }
 function edgeTex(){
@@ -138,26 +138,66 @@ function props(){
   const el=new T.Mesh(new T.BoxGeometry(.012,.036,.84),mat(0x9C7A2E,{metalness:.4,roughness:.4}));el.position.set(-1.62+.24,.018,-.55);el.rotation.y=.18;g.add(el);
   G.scene.add(g);
 }
+/* front cover artwork: blue book-cloth with gold-foil title (drawn for the outside face of a board) */
+function coverArt(ar){const W=1050,H=1390,c=mkCanvas(W,H),g=c.getContext("2d"),R=rngF(ar?7:3);
+  g.fillStyle="#1F4E8C";g.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=2){g.fillStyle=`rgba(5,18,45,${.07+R()*.07})`;g.fillRect(0,y,W,1);}
+  for(let x=0;x<W;x+=2){g.fillStyle=`rgba(170,200,240,${.03+R()*.05})`;g.fillRect(x,0,1,H);}
+  const vg=g.createRadialGradient(W/2,H*.42,80,W/2,H/2,H*.75);vg.addColorStop(0,"rgba(255,255,255,.07)");vg.addColorStop(1,"rgba(0,0,20,.28)");g.fillStyle=vg;g.fillRect(0,0,W,H);
+  const gold=(y0,y1)=>{const gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,"#F6E2A2");gr.addColorStop(.5,"#C99A3B");gr.addColorStop(1,"#E9CC7A");return gr;};
+  g.strokeStyle=gold(0,H);g.lineWidth=4;g.strokeRect(54,54,W-108,H-108);g.lineWidth=1.5;g.strokeRect(70,70,W-140,H-140);
+  // corner ornaments
+  g.fillStyle=gold(0,H);[[70,70],[W-70,70],[70,H-70],[W-70,H-70]].forEach(([x,y])=>{g.save();g.translate(x,y);g.rotate(Math.PI/4);g.fillRect(-9,-9,18,18);g.restore();});
+  // globe emblem
+  const cx=W/2,cy=H*.33,r=150;g.strokeStyle=gold(cy-r,cy+r);g.lineWidth=5;g.beginPath();g.arc(cx,cy,r,0,7);g.stroke();g.lineWidth=2.5;
+  for(let k=1;k<4;k++){g.beginPath();g.ellipse(cx,cy,r*k/4,r,0,0,7);g.stroke();}
+  [-.66,-.33,0,.33,.66].forEach(f=>{const yy=cy+f*r,hw=Math.sqrt(1-f*f)*r;g.beginPath();g.moveTo(cx-hw,yy);g.lineTo(cx+hw,yy);g.stroke();});
+  g.lineWidth=3;g.beginPath();g.ellipse(cx,cy,r*1.32,r*.42,-.35,0,7);g.stroke();
+  g.textAlign="center";g.textBaseline="alphabetic";
+  const txt=(s,font,y,ls)=>{g.font=font;g.fillStyle="rgba(0,0,0,.35)";g.fillText(s,cx+2,y+3);g.fillStyle=gold(y-120,y+10);g.fillText(s,cx,y);};
+  if(ar){g.direction="rtl";
+    txt("GISP",'600 190px "Crimson Pro",Georgia,serif',H*.66,0);
+    txt("الكتاب التفاعلي ثلاثي الأبعاد",'700 50px "Amiri","Noto Naskh Arabic",serif',H*.735);
+    g.fillStyle=gold(0,H);g.fillRect(cx-90,H*.765,180,3);
+    txt("اختبار المعرفة التقنية الأساسية في نظم المعلومات الجغرافية",'400 30px "Noto Naskh Arabic","Amiri",serif',H*.81);
+    txt("محمد الكامل",'700 40px "Amiri","Noto Naskh Arabic",serif',H*.9);
+  }else{
+    txt("GISP",'600 190px "Crimson Pro",Georgia,serif',H*.66);
+    txt("INTERACTIVE 3D STUDY BOOK",'500 34px "JetBrains Mono",monospace',H*.725);
+    g.fillStyle=gold(0,H);g.fillRect(cx-90,H*.755,180,3);
+    txt("Geospatial Core Technical Knowledge Exam",'italic 400 38px "Crimson Pro",Georgia,serif',H*.8);
+    txt("MOHAMED ALKAMEL",'500 30px "JetBrains Mono",monospace',H*.9);
+  }
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t;}
 function buildBook(){
-  const T=THREE,book=new T.Group(),cloth=clothTex(),coverM=new T.MeshStandardMaterial({map:cloth,roughness:.9,color:0xffffff});
-  const board=(sx)=>{const m=new T.Mesh(new T.BoxGeometry(PW+.05,.016,PD+.07),coverM);m.position.set(sx*(PW/2+.03),.008,0);m.castShadow=true;m.receiveShadow=true;return m;};
-  book.add(board(-1),board(1));
+  const T=THREE,book=new T.Group(),cloth=clothTex(),coverM=new T.MeshStandardMaterial({map:cloth,roughness:.82,color:0xffffff});
+  const BT0=.05,HY=.016+BT0;   /* hinge height: top of a page block; turning one half by 180 degrees around it lays it exactly on the other */
+  G.hingeL=new T.Group();G.hingeR=new T.Group();G.hingeL.position.set(0,HY,0);G.hingeR.position.set(0,HY,0);book.add(G.hingeL,G.hingeR);
+  G.half=sx=>sx<0?G.hingeL:G.hingeR;
+  const board=(sx)=>{const art=new T.MeshStandardMaterial({map:coverArt(sx>0),roughness:.7,metalness:.05});
+    const m=new T.Mesh(new T.BoxGeometry(PW+.05,.016,PD+.07),[coverM,coverM,coverM,art,coverM,coverM]);m.position.set(sx*(PW/2+.03),.008-HY,0);m.castShadow=true;m.receiveShadow=true;
+    /* the outside face (-y) is seen turned 180 degrees once the half is folded over, so turn the artwork to read upright */
+    art.map.wrapS=art.map.wrapT=T.RepeatWrapping;art.map.repeat.set(-1,-1);art.map.offset.set(1,1);return m;};
+  G.hingeL.add(board(-1));G.hingeR.add(board(1));
+  /* rounded spine seen when the book is closed */
+  G.spineClosed=[-1,1].map(s=>{const th=2*(.016+BT0)+.002,m=new T.Mesh(new T.CylinderGeometry(th/2,th/2,PD+.07,24,1,true,0,Math.PI),coverM);m.rotation.x=Math.PI/2;m.rotation.y=s>0?Math.PI:0;
+    m.scale.x=.55;m.position.set(0,th/2-.001,0);m.visible=false;m.castShadow=true;book.add(m);return m;});
   const spine=new T.Mesh(new T.CylinderGeometry(.045,.045,PD+.07,20,1,true,Math.PI/2,Math.PI),new T.MeshStandardMaterial({map:cloth,roughness:.9,side:T.DoubleSide}));spine.rotation.x=Math.PI/2;spine.position.y=.02;book.add(spine);
   const eT=edgeTex(),paperM=new T.MeshStandardMaterial({color:0xF2ECDE,roughness:.95});
   const BT=.05;
-  [-1,1].forEach(sx=>{const em=new T.MeshStandardMaterial({map:eT,roughness:.95});const blk=new T.Mesh(new T.BoxGeometry(PW-.01,BT,PD),[em,em,paperM,paperM,em,em]);blk.position.set(sx*(PW/2+.005),.016+BT/2,0);blk.castShadow=true;blk.receiveShadow=true;book.add(blk);});
+  [-1,1].forEach(sx=>{const em=new T.MeshStandardMaterial({map:eT,roughness:.95});const blk=new T.Mesh(new T.BoxGeometry(PW-.01,BT,PD),[em,em,paperM,paperM,em,em]);blk.position.set(sx*(PW/2+.005),.016+BT/2-HY,0);blk.castShadow=true;blk.receiveShadow=true;G.half(sx).add(blk);});
   // curved page surfaces
   G.pages={};
   ["left","right"].forEach(side=>{const geo=new T.PlaneGeometry(PW,PD,48,1);geo.rotateX(-Math.PI/2);const P=geo.attributes.position;
     for(let i=0;i<P.count;i++){const x=P.getX(i)+PW/2,u=x/PW;const y=PAGE_Y-.016*Math.exp(-u*14)+.004*Math.sin(Math.PI*Math.min(1,u*1.2));P.setX(i,side==="right"?x:-x);P.setY(i,y);}
     if(side==="left"){const ix=geo.index.array;for(let i=0;i<ix.length;i+=3){const t=ix[i];ix[i]=ix[i+1];ix[i+1]=t;}}
-    geo.computeVertexNormals();const m=new T.Mesh(geo,new T.MeshStandardMaterial({map:texFrom(pageCanvas({side}),side==="left"),roughness:.93}));m.receiveShadow=true;book.add(m);G.pages[side]=m;});
+    geo.computeVertexNormals();const m=new T.Mesh(geo,new T.MeshStandardMaterial({map:texFrom(pageCanvas({side}),side==="left"),roughness:.93}));m.receiveShadow=true;m.position.y=-HY;G.half(side==="left"?-1:1).add(m);G.pages[side]=m;});
   // ribbon
   const pts=[[.012,PAGE_Y+.002,-.62],[.016,PAGE_Y+.002,-.1],[.022,PAGE_Y+.002,.5],[.03,PAGE_Y-.004,.67],[.05,.03,.72],[.07,.002,.86],[.085,.001,.98]].map(p=>new T.Vector3(...p));
   const curve=new T.CatmullRomCurve3(pts),N=60,rw=.032,pos=[],idx=[];
   for(let i=0;i<=N;i++){const p=curve.getPoint(i/N);pos.push(p.x-rw/2,p.y,p.z,p.x+rw/2,p.y,p.z);if(i<N){const a=i*2;idx.push(a,a+2,a+1,a+1,a+2,a+3);}}
   const rg=new T.BufferGeometry();rg.setAttribute("position",new T.Float32BufferAttribute(pos,3));rg.setIndex(idx);rg.computeVertexNormals();
-  const rib=new T.Mesh(rg,new T.MeshStandardMaterial({color:0x1F4E9C,roughness:.55,side:T.DoubleSide}));rib.castShadow=true;book.add(rib);G.ribbon=rib;
+  const rib=new T.Mesh(rg,new T.MeshStandardMaterial({color:0xC9A045,roughness:.45,metalness:.25,side:T.DoubleSide}));rib.castShadow=true;book.add(rib);G.ribbon=rib;
   // turning leaf
   const lg=new T.PlaneGeometry(PW,PD,40,1);lg.rotateX(-Math.PI/2);
   G.leafFront=new T.Mesh(lg,new T.MeshStandardMaterial({roughness:.93,side:T.FrontSide}));
@@ -244,7 +284,26 @@ function set2D(on){
   if(on)flyTo(viewPreset(kind),true);else setView(G.view&&G.view!=="top"?G.view:"book");
 }
 function flyTo(v,instant){if(instant||RM()){G.cam.position.set(...v.p);G.ctl.target.set(...v.t);G.fly=null;return;}G.fly={p:new THREE.Vector3(...v.p),t:new THREE.Vector3(...v.t),time:1.6};}
-function resetView(instant){G.view="book";if(G.ctl)G.ctl.autoRotate=false;G.orbitPending=false;flyTo(G.is2D?viewPreset("book"):viewFor("book"),instant);}
+/* ---- the book opens and closes like a real hardcover ---- */
+function viewClosed(){const cam=G.cam,vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*cam.aspect),cx=G.closedSide*(PW/2+.03),d=Math.max((1.3/2)/Math.tan(hf/2),(1.62/2)/Math.tan(vf/2))*1.06,el=1.02;
+  return{p:[cx,Math.sin(el)*d+.05,Math.cos(el)*d+.12],t:[cx,.04,.06]};}
+function closedSideNow(){return(typeof isAR==="function"&&isAR()&&(typeof S==="undefined"||S.vol==="gisp"))?-1:1;}
+function setClosedVis(closed){if(G.spineClosed)G.spineClosed.forEach((m,i)=>m.visible=closed&&((i===0)===(G.closedSide>0)));document.body.classList.toggle("closed",closed);const v=closed?"hidden":"";if(G.leftEl)G.leftEl.style.visibility=v;if(G.rightEl)G.rightEl.style.visibility=v;
+  if(G.demoRoot)G.demoRoot.visible=!closed;if(G.ribbon)G.ribbon.visible=!closed;}
+function closeBook(instant){if(G.closed&&!instant)return Promise.resolve();
+  gsap.killTweensOf([G.hingeL.rotation,G.hingeR.rotation]);G.closedSide=closedSideNow();const h=G.closedSide>0?G.hingeL:G.hingeR,target=G.closedSide>0?-Math.PI:Math.PI;G.hingeL.rotation.z=G.hingeR.rotation.z=0;
+  G.closed=true;if(G.ctl)G.ctl.autoRotate=false;
+  if(instant||RM()){h.rotation.z=target;setClosedVis(true);flyTo(viewClosed(),instant);return Promise.resolve();}
+  if(G.leftEl)G.leftEl.style.visibility=G.rightEl.style.visibility="hidden";if(G.demoRoot)G.demoRoot.visible=false;if(G.ribbon)G.ribbon.visible=false;
+  try{sfx("flip");}catch(e){}flyTo(viewClosed());
+  return new Promise(res=>gsap.to(h.rotation,{z:target,duration:1.5,ease:"power2.inOut",onComplete:()=>{setClosedVis(true);res();}}));}
+function openBook(){if(!G.closed)return Promise.resolve();gsap.killTweensOf([G.hingeL.rotation,G.hingeR.rotation]);const h=G.closedSide>0?G.hingeL:G.hingeR;G.closed=false;document.body.classList.remove("closed");if(G.spineClosed)G.spineClosed.forEach(m=>m.visible=false);
+  try{sfx("flip");}catch(e){}
+  const done=()=>{h.rotation.z=0;setClosedVis(false);if(typeof renderSpread==="function")renderSpread({reDemo:true});};
+  if(RM()){done();resetView(true);return Promise.resolve();}
+  flyTo(G.is2D?viewPreset("book"):viewFor("book"));
+  return new Promise(res=>gsap.to(h.rotation,{z:0,duration:1.6,ease:"power2.inOut",onUpdate:()=>{if(Math.abs(h.rotation.z)<.35&&G.ribbon&&!G.ribbon.visible){G.ribbon.visible=true;}},onComplete:()=>{done();res();}}));}
+function resetView(instant){if(G.closed){flyTo(viewClosed(),instant);return;}G.view="book";if(G.ctl)G.ctl.autoRotate=false;G.orbitPending=false;flyTo(G.is2D?viewPreset("book"):viewFor("book"),instant);}
 function setTheme(night){
   const T=THREE;document.documentElement.dataset.night=night?"1":"0";
   if(G.desk.material.map)G.desk.material.map.dispose();G.desk.material.map=woodTex(night);G.desk.material.needsUpdate=true;

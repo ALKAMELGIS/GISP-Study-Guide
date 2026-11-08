@@ -62,8 +62,6 @@ node build_ar.js     # Arabic edition
 
 The covers are HTML pages in `source/cover/`. They are rendered to images with Playwright (`shot.py`).
 
-The `figs.py` and `mf_common.py` scripts write the pictures to an absolute folder, `/home/claude/notes/figs`. Change it to `figs` before running them anywhere else.
-
 The contents-page numbers are filled in a second pass:
 
 1. Convert the `.docx` to PDF.

@@ -61,6 +61,20 @@ Rebuild `index.html` after editing:
 python3 src/build.py
 ```
 
+## The Exam Memory Guide (English + العربية)
+
+`exam-memory-guide/` contains a printable study guide in two matching editions, **English and Arabic**. Each comes as Word and PDF.
+
+- 97 concept cards, each with a definition, an example, a picture and a likely exam question.
+- All 45 blueprint skills.
+- 150 practice questions.
+- A night-before page.
+- A bilingual glossary.
+
+See [exam-memory-guide/README.md](exam-memory-guide/README.md).
+
+[![The two editions](exam-memory-guide/preview.jpg)](exam-memory-guide/README.md)
+
 ## Printable quick guide
 
 `study-guide/` contains a short printable summary of the exam: `GISP_Exam_Quick_Study_Guide.docx` and `.pdf`. The scripts that generate them are in `study-guide/source/`.
